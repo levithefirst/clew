@@ -31,7 +31,6 @@ export function Cta({ auth }: { auth: { google: boolean; github: boolean } }) {
     <section aria-labelledby="cta-h" className="border-t">
       <div className="mx-auto max-w-[72rem] px-5 py-24 sm:px-8 sm:py-28 lg:px-12">
         <div className="card relative overflow-hidden">
-          <div className="grid-fade absolute inset-0 opacity-70" aria-hidden />
           <div className="relative grid gap-12 p-7 sm:p-10 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:p-14">
             <div>
               <Mark className="size-10 text-ink" />
