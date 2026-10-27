@@ -1,0 +1,35 @@
+{
+  "name": "clew-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Clew landing page: the failure -> successful retry -> next-failure loop, with real Walrus Mainnet memories",
+  "scripts": {
+    "dev": "next dev -p 3141",
+    "build": "next build",
+    "start": "next start -p 3141",
+    "typecheck": "tsc --noEmit",
+    "data": "node scripts/build-data.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.62.0",
+    "next": "^16.4.3",
+    "next-auth": "^5.0.0-beta.32",
+    "next-themes": "^0.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3"
+  }
+}

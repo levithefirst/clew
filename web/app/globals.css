@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+/*
+  Clew design system. Warm near-black canvas (dark, default) and warm paper (light).
+  One accent — thread amber-coral — reserved for the mark, CTAs, focus and "what worked".
+  Components never use raw hex; everything goes through these tokens.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-canvas: var(--canvas);
+  --color-raised: var(--raised);
+  --color-fill: var(--fill);
+  --color-fill-hover: var(--fill-hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-fill: var(--brand-fill);
+  --color-brand-fill-hover: var(--brand-fill-hover);
+  --color-on-brand: var(--on-brand);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-fail: var(--fail);
+  --color-fail-soft: var(--fail-soft);
+
+  --text-label: 0.75rem;
+  --text-label--line-height: 1rem;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.25rem;
+  --text-body-sm: 0.9375rem;
+  --text-body-sm--line-height: 1.5rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.65rem;
+  --text-lead: 1.1875rem;
+  --text-lead--line-height: 1.85rem;
+  --text-title: 2.25rem;
+  --text-title--line-height: 1.12;
+  --text-title--letter-spacing: -0.028em;
+  --text-display: 4.25rem;
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.04em;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root {
+  /* Light: warm paper. */
+  --canvas: #fbfaf8;
+  --raised: #ffffff;
+  --fill: #f3f1ed;
+  --fill-hover: #ebe8e3;
+  --line: rgb(28 25 23 / 0.09);
+  --line-strong: rgb(28 25 23 / 0.16);
+  --ink: #0c0a09;
+  --ink-2: #292524;
+  --ink-3: #57534e;
+  --ink-4: #6f6863;
+  --brand: #c2410c;
+  --brand-soft: rgb(194 65 12 / 0.08);
+  --brand-fill: #c2410c;
+  --brand-fill-hover: #ad3a0b;
+  --on-brand: #ffffff;
+  --ok: #2f7a45;
+  --ok-soft: rgb(47 122 69 / 0.08);
+  --fail: #b42318;
+  --fail-soft: rgb(180 35 24 / 0.07);
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.04), 0 8px 24px -12px rgb(28 25 23 / 0.12);
+  color-scheme: light;
+}
+
+.dark {
+  /* Dark (default): warm near-black. */
+  --canvas: #0b0a09;
+  --raised: #131210;
+  --fill: #181614;
+  --fill-hover: #211e1b;
+  --line: rgb(255 250 245 / 0.08);
+  --line-strong: rgb(255 250 245 / 0.15);
+  --ink: #fafaf9;
+  --ink-2: #e7e5e4;
+  --ink-3: #a8a29e;
+  --ink-4: #8a837d;
+  --brand: #f39a62;
+  --brand-soft: rgb(243 154 98 / 0.1);
+  --brand-fill: #f39a62;
+  --brand-fill-hover: #f6ab7b;
+  --on-brand: #1a0e06;
+  --ok: #86c49a;
+  --ok-soft: rgb(134 196 154 / 0.08);
+  --fail: #ef8a7c;
+  --fail-soft: rgb(239 138 124 / 0.08);
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 20px 40px -24px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html {
+    background: var(--canvas);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  body {
+    overflow-x: clip;
+    @apply bg-canvas font-sans text-body text-ink-2;
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--brand) 30%, transparent);
+  }
+  :focus-visible {
+    outline: 1.5px solid var(--brand);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  a,
+  button {
+    transition: color 150ms var(--ease-out-soft), background-color 150ms var(--ease-out-soft), border-color 150ms var(--ease-out-soft), opacity 150ms var(--ease-out-soft);
+  }
+  summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .eyebrow {
+    font-size: var(--text-label);
+    line-height: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+    font-weight: 500;
+  }
+  .card {
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-card);
+  }
+  .rise {
+    animation: rise 520ms var(--ease-out-soft) both;
+  }
+  .rise-2 {
+    animation: rise 520ms var(--ease-out-soft) 90ms both;
+  }
+  .rise-3 {
+    animation: rise 520ms var(--ease-out-soft) 180ms both;
+  }
+  .rise-4 {
+    animation: rise 620ms var(--ease-out-soft) 300ms both;
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 600ms var(--ease-out-soft), transform 600ms var(--ease-out-soft);
+  }
+  .reveal[data-shown="true"] {
+    opacity: 1;
+    transform: none;
+  }
+  .thread-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw 2.4s var(--ease-out-soft) 200ms forwards;
+  }
+  .knot-pop {
+    opacity: 0;
+    animation: fade 400ms var(--ease-out-soft) 2.2s forwards;
+  }
+  .grid-fade {
+    background-image: linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 20%, transparent 75%);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
