@@ -56,7 +56,7 @@ export function Hero() {
             The next time the same contract fails with a similar error, Clew surfaces the exact retry that succeeded before (the calldata change, the gas, the nonce) instead of a generic <span className="whitespace-nowrap font-mono text-[0.95em] text-ink-2">“transaction reverted”</span>.
           </p>
           <div className="rise-4 mt-9 flex flex-wrap items-center gap-3">
-            <a href="#example" className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-fill px-5 text-body-sm font-[580] text-on-brand hover:bg-brand-fill-hover">
+            <a href="#same-failure" className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-fill px-5 text-body-sm font-[580] text-on-brand hover:bg-brand-fill-hover">
               See a real recall <ArrowRight className="size-4" aria-hidden />
             </a>
             <a href={SITE.repo} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-raised/60 px-5 text-body-sm font-[540] text-ink-2 backdrop-blur hover:bg-fill-hover hover:text-ink">
@@ -102,7 +102,7 @@ export function Hero() {
                 <li className="flex gap-2">
                   <span className="text-brand" aria-hidden>→</span>
                   <span>
-                    gas limit {memory.diff.gasLimit.success.toLocaleString("en-US")} <span className="text-ink-4">(failed with {memory.diff.gasLimit.failed.toLocaleString("en-US")})</span>
+                    retry also used gas limit {memory.diff.gasLimit.success.toLocaleString("en-US")} <span className="text-ink-4">(failed with {memory.diff.gasLimit.failed.toLocaleString("en-US")})</span>
                   </span>
                 </li>
               )}

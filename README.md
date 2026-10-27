@@ -11,7 +11,7 @@ Clew handles one loop only: **failure → successful retry → next failure**.
 | 1. Ingest failure | `recordFailure(chain, hash)` in `src/clew.ts` | Tatum `eth_getTransactionReceipt` (status `0x0`) + `eth_getTransactionByHash` (input, gas, nonce) + `eth_getBlockByNumber` (timestamp). Revert from `debug_traceTransaction` (callTracer), falling back to an `eth_call` replay at `block-1`. Decodes `Error(string)` `0x08c379a0`, `Panic` `0x4e487b71`, and custom error selectors. |
 | 2. Find the retry | `watchForRetry(failure, 10min)` | Polls Tatum `eth_getBlockReceipts` after the failed block for a status `0x1` tx from the same wallet to the same contract. |
 | 3. Remember | `recordRetry(chain, failed, success)` → `src/memory.ts` | Diffs gas used, gas limit, gas price, nonce, value, function selector, and each differing 32-byte calldata word. Writes a factual memory with `memwal.remember()` → `waitForRememberJob()` to namespace `clew` on `https://relayer.memory.walrus.xyz`. |
-| 4. Next failure | `onFailure(chain, hash)` | Ingests the new failure, runs `memwal.recall()`, then keeps only memories with an exact `chain` + `contract` + `wallet` match and a similar error signature. Returns `{priorPath, suggestion}` (the `NEXT_ACTION`), or a generic message if nothing matches. |
+| 4. Next failure | `onFailure(chain, hash)` | Ingests the new failure, runs `memwal.recall()`, then keeps only memories with an exact `chain` + `contract` + `wallet` match and a similar error signature. Returns `{priorPath, nextAction, suggestion}`: the stored `NEXT_ACTION` parsed into calldata changes + gas floors, and a copy-ready text that reports gas as what the retry did, not as the cause. Or a generic message if nothing matches. |
 
 **Error signature:** `revert:<normalized reason>` | `panic:<code>` | `custom:<selector>` | `out-of-gas:<fn selector>` | `<fn selector>:reverted`. "Similar" means an exact match, or a token-Jaccard score of at least 0.6 between two revert strings.
 
@@ -45,16 +45,19 @@ Supported chains (Tatum gateways): `ethereum`, `base`, `polygon`, `arbitrum`, `o
 ```bash
 npm test                                   # offline: mocked RPC + in-memory store (decode, error sig, diff, loop)
 npm run demo                               # full Mainnet loop -> demo-output.txt (idempotent)
-npm run check -- base <failedTxHash>       # step 4 for any failure: prior path or generic
+npm run check -- base <failedTxHash>       # step 4 for any failure: prior path + next action, or generic
+                                           #   --without-memory (empty namespace), --json (raw result)
 npm run record -- base <failedTx> [okTx]   # steps 1-3: watch for the retry if okTx is omitted, then write memory
 npm run discover -- base 150 300           # find real fail->success candidates (scan 150 blocks, 300-block window)
 ```
 
 ## Two-minute demo
 
+Exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`docs/blog.md`](docs/blog.md).
+
 1. `npm test` (about 1 s) shows the logic offline.
-2. `npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6` is a real Base failure (`Too little received`) from wallet `0x336a…` on contract `0x8ea5…`. Clew recalls the stored memory and returns the earlier retry `0x389a…` along with the calldata words and gas price to change.
-3. The same failure with an empty namespace, or a failure from a different wallet on the same contract, returns only the generic "reverted" message. See `[4]` in `demo-output.txt`.
+2. `npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 --without-memory` returns only the generic "reverted" message.
+3. The same command without the flag recalls the stored memory for wallet `0x336a…` on contract `0x8ea5…` and returns the earlier retry `0x389a…` with a copy-ready next action: the calldata words to re-encode, then the gas price the retry bid as a floor to consider (not as the proven cause).
 4. `memories.json` lists the 12 Walrus Mainnet writes (job id + blob id + text).
 
 ## What the demo used (all real Mainnet data, no fixtures)

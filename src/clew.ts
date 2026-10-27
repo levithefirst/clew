@@ -82,20 +82,59 @@ export function diffAttempts(f: Attempt, s: Attempt): Diff {
   };
 }
 
-/** The concrete next action the memory encodes. */
+/** The concrete next action the memory encodes. Gas items say what the retry did, not that gas was the cause. */
 export function suggest(f: Attempt, s: Attempt, d: Diff): string {
   const out: string[] = [];
   const oog = f.errorSig?.startsWith("out-of-gas") || f.gasUsed >= f.gasLimit * 0.98;
-  if (oog || d.gasLimit[1] > d.gasLimit[0] * 1.2) out.push(`raise gas limit to >= ${d.gasLimit[1]} (failed with limit ${d.gasLimit[0]}, retry used ${d.gasUsed[1]})`);
   if (d.selectorChanged) out.push(`call ${d.selectors[1]} instead of ${d.selectors[0]}`);
   if (d.value[0] !== d.value[1]) out.push(`send value ${d.value[1]} wei (failed with ${d.value[0]})`);
   if (!d.selectorChanged && d.args.length) {
     const shown = d.args.slice(0, 3).map((a) => `arg word ${a.index} = ${a.to} (was ${a.from})`).join("; ");
-    out.push(`re-encode calldata: ${shown}${d.args.length > 3 ? `; +${d.args.length - 3} more words differ — rebuild params like tx ${s.hash}` : ""}`);
+    out.push(`re-encode calldata: ${shown}${d.args.length > 3 ? `; +${d.args.length - 3} more words differ; rebuild params like tx ${s.hash}` : ""}`);
   }
-  if (d.gasPrice[1] > (d.gasPrice[0] * 11n) / 10n) out.push(`bid gas price >= ${d.gasPrice[1]} wei (failed at ${d.gasPrice[0]})`);
-  if (!out.length) out.push(`resubmit identical calldata/gas after ~${d.blocksLater} blocks (${d.secondsLater}s): params were not the problem, timing/state was`);
+  if (oog || d.gasLimit[1] > d.gasLimit[0] * 1.2) out.push(`retry used gas limit ${d.gasLimit[1]} (failed with limit ${d.gasLimit[0]}, retry used ${d.gasUsed[1]}); consider gas limit >= ${d.gasLimit[1]}`);
+  if (d.gasPrice[1] > (d.gasPrice[0] * 11n) / 10n) out.push(`retry bid ${d.gasPrice[1]} wei (failed at ${d.gasPrice[0]}); consider bidding >= ${d.gasPrice[1]} wei`);
+  if (!out.length) out.push(`resubmit identical calldata/gas after ~${d.blocksLater} blocks (${d.secondsLater}s): params did not change, so state or timing likely did`);
   return out.join("; ") + `; template tx ${s.hash}`;
+}
+
+/** Structured form of a stored NEXT_ACTION. Parses both the current and the original (pre-softening) wording. */
+export interface NextAction {
+  calldata: { index: number; to: string; from: string }[]; moreWords: number;
+  callInstead?: { to: string; from: string }; value?: { to: string; from: string };
+  gasLimit?: { floor: number; failed: number }; gasPrice?: { floor: string; failed: string };
+  resubmit?: string; templateTx?: string;
+}
+
+export function parseNextAction(text: string): NextAction {
+  const a: NextAction = { calldata: [], moreWords: 0 };
+  for (const m of text.matchAll(/arg word (\d+) = (\S+) \(was (\S+?)\)/g)) a.calldata.push({ index: Number(m[1]), to: m[2], from: m[3] });
+  const more = text.match(/\+(\d+) more words differ/); if (more) a.moreWords = Number(more[1]);
+  const fn = text.match(/call (0x[0-9a-f]+) instead of (0x[0-9a-f]+)/); if (fn) a.callInstead = { to: fn[1], from: fn[2] };
+  const v = text.match(/send value (\d+) wei \(failed with (\d+)\)/); if (v) a.value = { to: v[1], from: v[2] };
+  const gl = text.match(/(?:raise gas limit to >= |retry used gas limit )(\d+) \(failed with limit (\d+)/); if (gl) a.gasLimit = { floor: Number(gl[1]), failed: Number(gl[2]) };
+  const gp = text.match(/(?:bid gas price >= |retry bid )(\d+) wei \(failed at (\d+)\)/); if (gp) a.gasPrice = { floor: gp[1], failed: gp[2] };
+  const rs = text.match(/resubmit identical calldata\/gas after ~(\d+) blocks \((\d+)s\)/); if (rs) a.resubmit = `${rs[1]} blocks (${rs[2]}s)`;
+  a.templateTx = text.match(/template tx (0x[0-9a-f]+)/)?.[1];
+  return a;
+}
+
+/** Copy-ready next action. Calldata/function changes first; gas is reported as what the retry did, with a floor to consider. */
+export function formatNextAction(a: NextAction): string {
+  const out: string[] = [];
+  if (a.templateTx) out.push(`Prior successful retry (template): ${a.templateTx}`);
+  if (a.callInstead) out.push(`- Call ${a.callInstead.to} instead of ${a.callInstead.from}.`);
+  if (a.value) out.push(`- Send value ${a.value.to} wei (failed with ${a.value.from}).`);
+  if (a.calldata.length) {
+    out.push(`- Re-encode calldata like the retry:`);
+    for (const c of a.calldata) out.push(`    arg word ${c.index} = ${c.to} (was ${c.from})`);
+    if (a.moreWords) out.push(`    +${a.moreWords} more word${a.moreWords === 1 ? " differs; copy it" : "s differ; copy them"} from the template tx`);
+  }
+  if (a.gasLimit) out.push(`- Gas limit: the retry used ${a.gasLimit.floor} (failed with ${a.gasLimit.failed}). Consider >= ${a.gasLimit.floor}.`);
+  if (a.gasPrice) out.push(`- Gas price: the retry bid ${a.gasPrice.floor} wei (failed at ${a.gasPrice.failed}). Consider bidding >= ${a.gasPrice.floor} wei.`);
+  if (a.gasLimit || a.gasPrice) out.push(`  Gas differed between the attempts; that does not prove it caused the revert.`);
+  if (a.resubmit) out.push(`- Calldata and gas were identical; the retry landed ${a.resubmit} later. State or timing likely changed, so resubmitting may be enough.`);
+  return out.join("\n");
 }
 
 export function memoryText(f: Attempt, s: Attempt, d: Diff): string {
@@ -162,12 +201,14 @@ export async function onFailure(chain: string, hash: string, opts: { store?: Mem
     .sort((a, b) => Number(field(b.text, "success_block")) - Number(field(a.text, "success_block")))[0];
   if (!match) {
     return { matched: false as const, failure: f,
-      message: `Tx ${f.hash} on ${chain} reverted (${f.errorSig}). No prior successful path on record for this wallet+contract — check params and retry.` };
+      message: `Tx ${f.hash} on ${chain} reverted (${f.errorSig}). No prior successful path on record for this wallet+contract. Check params and retry.` };
   }
+  const stored = match.text.match(/NEXT_ACTION: (.*)$/)?.[1] ?? "";
+  const nextAction = parseNextAction(stored);
   return {
     matched: true as const, failure: f, memoryBlobId: match.blob_id, distance: match.distance,
     priorPath: { failedTx: field(match.text, "failed_tx"), successTx: field(match.text, "success_tx"), successBlock: Number(field(match.text, "success_block")),
       change: match.text.match(/Change: (.*?)\. NEXT_ACTION/)?.[1] },
-    suggestion: match.text.match(/NEXT_ACTION: (.*)$/)?.[1],
+    nextAction, suggestion: formatNextAction(nextAction), storedNextAction: stored,
   };
 }

@@ -7,7 +7,7 @@ import { RELAYER, NAMESPACE } from "../src/memory.ts";
 const pairs: any[] = JSON.parse(readFileSync("fixtures/pairs.json", "utf8"));
 const cands = (c: string): any[] => JSON.parse(readFileSync(`fixtures/candidates-${c}.json`, "utf8"));
 const log = console.log;
-log(`Clew demo — Tatum RPC gateways + Walrus Memory relayer ${RELAYER}, namespace "${NAMESPACE}"`);
+log(`Clew demo: Tatum RPC gateways + Walrus Memory relayer ${RELAYER}, namespace "${NAMESPACE}"`);
 log(`${pairs.length} REAL on-chain fail->success pairs (discovered by scripts/discover.ts, all receipts via Tatum)\n`);
 
 // 1) Watcher: from a failure alone, find the successful retry on-chain.

@@ -2,7 +2,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setRpc, decodeRevert } from "../src/tatum.ts";
-import { errorSignature, similarError, diffAttempts, recordRetry, onFailure, type Attempt } from "../src/clew.ts";
+import { readFileSync } from "node:fs";
+import { errorSignature, similarError, diffAttempts, recordRetry, onFailure, parseNextAction, formatNextAction, type Attempt } from "../src/clew.ts";
 import type { MemoryStore, Recalled } from "../src/memory.ts";
 
 const W = "0x" + "a".repeat(40), C = "0x" + "c".repeat(40), W2 = "0x" + "b".repeat(40);
@@ -67,4 +68,22 @@ test("loop: retry is remembered, next similar failure gets the prior path; other
   if (hit.matched) { assert.equal(hit.priorPath.successTx, "0xs1"); assert.match(hit.suggestion!, /arg word 1 = 0x3b6/); }
   assert.equal((await onFailure("base", "0xf3", { store })).matched, false); // other wallet
   assert.equal((await onFailure("base", "0xf2", { store, namespace: "empty" })).matched, false); // no memory
+});
+
+test("next action: real stored Base memory parses into calldata + qualified gas floor", () => {
+  const ledger = JSON.parse(readFileSync("memories.json", "utf8"));
+  const text: string = Object.values<any>(ledger).find((m) => m.text.includes("success_tx=0x389a50464dd3")).text;
+  const a = parseNextAction(text.match(/NEXT_ACTION: (.*)$/)![1]);
+  assert.deepEqual(a.calldata.map((c) => c.index), [4, 15, 16]);
+  assert.equal(a.calldata[0].to, "0x40345a5d65e9884189");
+  assert.equal(a.moreWords, 1);
+  assert.deepEqual(a.gasPrice, { floor: "9532143", failed: "5916993" });
+  assert.equal(a.templateTx, "0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03");
+  const s = formatNextAction(a);
+  assert.match(s, /arg word 4 = 0x40345a5d65e9884189 \(was 0x4034297ede533478d4\)/);
+  assert.match(s, /Consider bidding >= 9532143 wei/);
+  assert.match(s, /does not prove it caused the revert/);
+  assert.doesNotMatch(s, /—/);
+  // new wording round-trips through the same parser
+  assert.deepEqual(parseNextAction("retry used gas limit 900 (failed with limit 500, retry used 700); consider gas limit >= 900; retry bid 20 wei (failed at 10); consider bidding >= 20 wei; template tx 0xabc").gasLimit, { floor: 900, failed: 500 });
 });

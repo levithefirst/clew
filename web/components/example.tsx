@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { Hash } from "@/components/hash";
 import { DATA, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, type Memory } from "@/lib/data";
-import { adviceLines, clip } from "@/lib/advice";
+import { clip } from "@/lib/advice";
+import { NextAction } from "@/components/next-action";
 import { cn, fmt, short } from "@/lib/utils";
 
 const RECALLED = new Map(DATA.recalls.map((r) => [r.memory_key, r]));
@@ -34,7 +35,6 @@ export function Example() {
   const recall = RECALLED.get(m.key);
   const d = m.diff;
   const exp = explorerName[m.chain];
-  const advice = m.next_action ? adviceLines(m.next_action, 5) : [];
   const moreArgs = d.argsChanged - d.args.length;
 
   return (
@@ -147,14 +147,7 @@ export function Example() {
               <Hash value={m.success_tx} href={txUrl(m.chain, m.success_tx)} label="prior success" linkLabel={exp} className="text-ink" />
               {m.success_block && <span className="num text-label text-ink-4">block {m.success_block.toLocaleString("en-US")}</span>}
             </p>
-            <ul className="mt-3 space-y-1.5 font-mono text-[0.78rem] text-ink-2">
-              {advice.map((l) => (
-                <li key={l} className="flex gap-2">
-                  <span className="text-brand" aria-hidden>→</span>
-                  <span className="min-w-0 break-words">{l}</span>
-                </li>
-              ))}
-            </ul>
+            {m.next_action && <NextAction nextAction={m.next_action} className="mt-3" />}
             <p className="mt-4 text-label text-ink-4">
               {recall ? "Returned by recall in the Mainnet demo run." : "Stored on Walrus; returned on this pair’s next matching failure. No repeat failure was observed for it in the demo window."}
             </p>

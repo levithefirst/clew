@@ -1,40 +1,70 @@
-// Turn the stored NEXT_ACTION string into short, readable lines (pure string parsing of real data).
-export function adviceLines(nextAction: string, max = 4): string[] {
-  const parts = nextAction
-    .split(/;\s*/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .filter((s) => !/^(template tx|rebuild params like tx)/.test(s));
+// Turn the stored NEXT_ACTION string into readable lines and a copy-ready block (pure string parsing of real data).
+// Mirrors parseNextAction/formatNextAction in ../src/clew.ts. Gas is reported as what the retry did, not as the cause.
+
+export interface NextAction {
+  calldata: { index: number; to: string; from: string }[];
+  moreWords: number;
+  callInstead?: { to: string; from: string };
+  value?: { to: string; from: string };
+  gasLimit?: { floor: number; failed: number };
+  gasPrice?: { floor: string; failed: string };
+  resubmit?: string;
+  templateTx?: string;
+}
+
+export function parseNextAction(text: string): NextAction {
+  const a: NextAction = { calldata: [], moreWords: 0 };
+  for (const m of text.matchAll(/arg word (\d+) = (\S+) \(was (\S+?)\)/g)) a.calldata.push({ index: Number(m[1]), to: m[2], from: m[3] });
+  const more = text.match(/\+(\d+) more words differ/);
+  if (more) a.moreWords = Number(more[1]);
+  const fn = text.match(/call (0x[0-9a-f]+) instead of (0x[0-9a-f]+)/);
+  if (fn) a.callInstead = { to: fn[1], from: fn[2] };
+  const v = text.match(/send value (\d+) wei \(failed with (\d+)\)/);
+  if (v) a.value = { to: v[1], from: v[2] };
+  const gl = text.match(/(?:raise gas limit to >= |retry used gas limit )(\d+) \(failed with limit (\d+)/);
+  if (gl) a.gasLimit = { floor: Number(gl[1]), failed: Number(gl[2]) };
+  const gp = text.match(/(?:bid gas price >= |retry bid )(\d+) wei \(failed at (\d+)\)/);
+  if (gp) a.gasPrice = { floor: gp[1], failed: gp[2] };
+  const rs = text.match(/resubmit identical calldata\/gas after ~(\d+) blocks \((\d+)s\)/);
+  if (rs) a.resubmit = `${rs[1]} blocks (${rs[2]}s)`;
+  a.templateTx = text.match(/template tx (0x[0-9a-f]+)/)?.[1];
+  return a;
+}
+
+/** Plain-text block for the clipboard: full values, no truncation. */
+export function formatNextAction(a: NextAction): string {
   const out: string[] = [];
-  for (const p of parts) {
-    const reenc = p.match(/^(?:re-encode calldata: )?arg word (\d+) = (\S+) \(was (\S+)\)/);
-    if (reenc) {
-      out.push(`re-encode arg ${reenc[1]} → ${clip(reenc[2])}`);
-      continue;
-    }
-    const gp = p.match(/bid gas price >= (\d+) wei \(failed at (\d+)\)/);
-    if (gp) {
-      out.push(`bid gas price ≥ ${Number(gp[1]).toLocaleString("en-US")} wei (failed at ${Number(gp[2]).toLocaleString("en-US")})`);
-      continue;
-    }
-    const gl = p.match(/raise gas limit to >= (\d+)/);
-    if (gl) {
-      out.push(`raise gas limit to ≥ ${Number(gl[1]).toLocaleString("en-US")}`);
-      continue;
-    }
-    const fn = p.match(/call (0x[0-9a-f]+) instead of (0x[0-9a-f]+)/);
-    if (fn) {
-      out.push(`call ${fn[1]} instead of ${fn[2]}`);
-      continue;
-    }
-    const more = p.match(/\+(\d+) more words differ/);
-    if (more) {
-      out.push(`+${more[1]} more calldata word${more[1] === "1" ? "" : "s"}; rebuild params like the retry`);
-      continue;
-    }
-    out.push(p.replace(/; rebuild params like tx \S+/, ""));
+  if (a.templateTx) out.push(`Prior successful retry (template): ${a.templateTx}`);
+  if (a.callInstead) out.push(`- Call ${a.callInstead.to} instead of ${a.callInstead.from}.`);
+  if (a.value) out.push(`- Send value ${a.value.to} wei (failed with ${a.value.from}).`);
+  if (a.calldata.length) {
+    out.push(`- Re-encode calldata like the retry:`);
+    for (const c of a.calldata) out.push(`    arg word ${c.index} = ${c.to} (was ${c.from})`);
+    if (a.moreWords) out.push(`    +${a.moreWords} more word${a.moreWords === 1 ? " differs; copy it" : "s differ; copy them"} from the template tx`);
   }
-  return out.slice(0, max);
+  if (a.gasLimit) out.push(`- Gas limit: the retry used ${a.gasLimit.floor} (failed with ${a.gasLimit.failed}). Consider >= ${a.gasLimit.floor}.`);
+  if (a.gasPrice) out.push(`- Gas price: the retry bid ${a.gasPrice.floor} wei (failed at ${a.gasPrice.failed}). Consider bidding >= ${a.gasPrice.floor} wei.`);
+  if (a.gasLimit || a.gasPrice) out.push(`  Gas differed between the attempts; that does not prove it caused the revert.`);
+  if (a.resubmit) out.push(`- Calldata and gas were identical; the retry landed ${a.resubmit} later. State or timing likely changed, so resubmitting may be enough.`);
+  return out.join("\n");
+}
+
+const n = (x: string | number) => Number(x).toLocaleString("en-US");
+
+/** Short display lines. Calldata/function first, gas last and qualified. */
+export function adviceLines(nextAction: string, max = 4): string[] {
+  const a = parseNextAction(nextAction);
+  const out: string[] = [];
+  if (a.callInstead) out.push(`call ${a.callInstead.to} instead of ${a.callInstead.from}`);
+  if (a.value) out.push(`send value ${n(a.value.to)} wei (failed with ${n(a.value.from)})`);
+  for (const c of a.calldata) out.push(`re-encode arg ${c.index} → ${clip(c.to)}`);
+  if (a.moreWords) out.push(`+${a.moreWords} more calldata word${a.moreWords === 1 ? "" : "s"}; rebuild params like the retry`);
+  if (a.resubmit) out.push(`same calldata and gas; retry landed ${a.resubmit} later`);
+  const gas: string[] = [];
+  if (a.gasLimit) gas.push(`retry used gas limit ${n(a.gasLimit.floor)} (failed with ${n(a.gasLimit.failed)}); consider ≥ that`);
+  if (a.gasPrice) gas.push(`retry bid ${n(a.gasPrice.floor)} wei gas (failed at ${n(a.gasPrice.failed)}); consider ≥ that`);
+  // Keep gas visible even when calldata lines fill the budget.
+  return [...out.slice(0, Math.max(0, max - gas.length)), ...gas].slice(0, max);
 }
 
 export function clip(hex: string, n = 20) {
