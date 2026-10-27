@@ -28,7 +28,7 @@ export function ExampleSection() {
         <Reveal as="div" className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-line lg:grid-cols-4">
           {stats.map((x) => (
             <div key={x.l} className="bg-canvas px-5 py-5">
-              <p className="num text-[2rem] font-[620] leading-none tracking-[-0.03em] text-ink">{x.v}</p>
+              <p className="num text-[2rem] font-[620] leading-none tracking-[-0.03em] text-brand">{x.v}</p>
               <p className="mt-2 text-small text-ink-3">{x.l}</p>
             </div>
           ))}

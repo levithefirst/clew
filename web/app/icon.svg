@@ -1,9 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4">
-  <style>.b{stroke:#1c1917}.t{stroke:#c2410c}@media (prefers-color-scheme: dark){.b{stroke:#e7e5e4}.t{stroke:#f39a62}}</style>
-  <g class="b">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6">
+  <style>.h{stop-color:#8a7158}.l{stop-color:#4f4136}@media (prefers-color-scheme: dark){.h{stop-color:#cbb6a1}.l{stop-color:#766354}}</style>
+  <defs>
+    <linearGradient id="b" x1="4" y1="3" x2="21" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0" class="h"/><stop offset="1" class="l"/></linearGradient>
+    <linearGradient id="t" x1="19" y1="18" x2="30" y2="27" gradientUnits="userSpaceOnUse"><stop offset="0" class="l"/><stop offset="1" class="h"/></linearGradient>
+  </defs>
+  <g stroke="url(#b)">
     <circle cx="12.5" cy="12.5" r="9.5"/>
     <path d="M4.2 8.6C9.6 9.4 14.6 13.4 16.4 21.2"/>
     <path d="M8.2 4C13.8 5.6 18.4 10 20 16.8"/>
   </g>
-  <path class="t" d="M19.2 18.6c1.6 5.4 4.6 9.2 10.6 8.4"/>
+  <path stroke="url(#t)" d="M19.2 18.6c1.6 5.4 4.6 9.2 10.6 8.4"/>
 </svg>

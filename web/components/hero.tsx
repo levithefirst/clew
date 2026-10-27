@@ -16,16 +16,22 @@ function HeroThread() {
       className="pointer-events-none absolute inset-0 -z-10 h-full w-full opacity-70 dark:opacity-60"
       fill="none"
     >
+      <defs>
+        <linearGradient id="hero-thread" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="var(--mark-lo)" stopOpacity="0.2" />
+          <stop offset="0.55" stopColor="var(--mark-lo)" />
+          <stop offset="1" stopColor="var(--mark-hi)" />
+        </linearGradient>
+      </defs>
       <path
         d="M-40 548 C 220 548 430 540 560 505 S 700 420 655 468 S 610 528 700 524 S 930 500 1010 390 S 1110 150 1260 110"
-        stroke="var(--brand)"
-        strokeOpacity="0.45"
+        stroke="url(#hero-thread)"
+        strokeOpacity="0.75"
         strokeWidth="1.5"
         strokeLinecap="round"
         pathLength={1}
         className="thread-draw"
       />
-      <circle cx="1260" cy="150" r="0" />
     </svg>
   );
 }
@@ -44,7 +50,7 @@ export function Hero() {
             Tatum RPC × Walrus Memory · on Mainnet
           </p>
           <h1 className="rise-2 mt-6 text-[2.625rem] font-[640] leading-[1.02] tracking-[-0.04em] text-balance text-ink sm:text-[3.5rem] lg:text-display">
-            Stop guessing why it reverted. <span className="text-brand">Clew remembers what worked.</span>
+            Stop guessing why it reverted. <span className="bg-linear-to-br from-brand-hi via-brand to-brand-deep bg-clip-text text-brand [-webkit-text-fill-color:transparent] dark:to-brand">Clew remembers what worked.</span>
           </h1>
           <p className="rise-3 mt-6 max-w-[34rem] text-lead text-ink-3 text-pretty">
             The next time the same contract fails with a similar error, Clew surfaces the exact retry that succeeded before — the calldata change, the gas, the nonce — instead of a generic <span className="whitespace-nowrap font-mono text-[0.95em] text-ink-2">“transaction reverted”</span>.
