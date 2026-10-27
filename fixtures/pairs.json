@@ -1,0 +1,110 @@
+[
+  {
+    "chain": "base",
+    "wallet": "0x336a079d7b894f6b6356674b3ad668bffdd5811d",
+    "contract": "0x8ea5ad2a58c1dae75394b1e8636e6518eb6dac50",
+    "fail": "0x15f0e33c6bcaae91577346de3efac3680848b1158407ee77dbc6d743361ac153",
+    "success": "0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03",
+    "errorSig": "revert:too_little_received",
+    "nextFailure": "0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6"
+  },
+  {
+    "chain": "base",
+    "wallet": "0x586574504712377b817df6091c75bb7c44cccb93",
+    "contract": "0x29be31e7ef434a74d69da1cb6b51ad65c83e9a7b",
+    "fail": "0x987c3e003ef5d797cecf170f2e5a2342658ac27608728a404f9ce8c6d127abce",
+    "success": "0x82d2caf493467bf6c3e500237ecd35bc2631d96ca31d056df2709b6d9f458840",
+    "errorSig": "revert:spln",
+    "nextFailure": "0x9539b67dbf137f4972cf79c81faa659d80f2d828da7e8822c765678fbedbd7db"
+  },
+  {
+    "chain": "base",
+    "wallet": "0xa8be888c28d0a81b624bc9937f51293b0f63ffc1",
+    "contract": "0x563203867b12cf2405f415042db11f6fa9fb937b",
+    "fail": "0x5d697a59e50a29e42c46f1355b8180406d5bbf260d271c11cdf69ee83c396ad1",
+    "success": "0x7821752b3a8dc12fdc8f429ada7ef44fb738ca2fec5582c114adfd8a60b362e8",
+    "errorSig": "custom:0x3b9e41d7",
+    "nextFailure": "0xfefcabcc9badbf4439e6877cb4cc5304b9bb6191eb0eb01913d595cba6b5554a"
+  },
+  {
+    "chain": "base",
+    "wallet": "0x4566058b498a0dc1e949c1305629dc9613be404a",
+    "contract": "0xf01b5e95f6b5e8e1cf764d575dcda1bbed435858",
+    "fail": "0x567fee2e48dbc7329ab97e98c9f28c6ab3b26308055484d7727e67a4ffc17be3",
+    "success": "0x7b3bc7f1d774618f4885e25a4a9b71e52e39956292d3b01a68f4dbd54cdabb39",
+    "errorSig": "revert:en",
+    "nextFailure": "0xb7ffb882c1b50d45c2ac44d97d35021c0629e0444f13bbb2db44230a80e56ab5"
+  },
+  {
+    "chain": "base",
+    "wallet": "0x0274430f4f368b4b556552e4fe506accd4e3d8ce",
+    "contract": "0x402e0d314fd6f55348df7cc478bab811826e3e91",
+    "fail": "0x450f9c8c6530ff978e0eada7b59d4626880d9a0b0728f0c5d04fc30a4fe70a86",
+    "success": "0x8ebf518979d4c2bea5e9bfd8db76daee8deefe5678ba6f41d54ecc5b3f059d1f",
+    "errorSig": "0x2700032b:reverted",
+    "nextFailure": null
+  },
+  {
+    "chain": "base",
+    "wallet": "0x9aec62fd2b1061d70a5d0b8d2163c6d5c532c300",
+    "contract": "0x7a108179518799f63e6da8fa6d7de07ac0dd84cb",
+    "fail": "0xd7469c6fff97dfed4ecadaa27ab48701f6b51130e83db9004ff27adf130967e4",
+    "success": "0x5ec6b67ce0bd56b8a7adad15a53244dbaac7b5a37f3cb012097040c911c1df4b",
+    "errorSig": "revert:spl",
+    "nextFailure": null
+  },
+  {
+    "chain": "base",
+    "wallet": "0x9243ec0a167adb139ff5967c90a5ac478ad598c4",
+    "contract": "0x13d46c51d4a8eeae08f2ce2ab519ed587fd7792f",
+    "fail": "0x55025748c77df7ad9deeb6120b700e27c277b794f07b4ed95376bfff6f6e96d6",
+    "success": "0xaa2e2060614706d38aee3ca0f2693858ec519b319d4a2876770d432229d4f620",
+    "errorSig": "custom:0x857ade7c",
+    "nextFailure": "0x44bf3cb3a30be82d3e3fff00db3685fa9ebf31f7a31e5517096a01e70231a76a"
+  },
+  {
+    "chain": "base",
+    "wallet": "0x88888888087563fd32f96962b491c92d9f88fe28",
+    "contract": "0x418830ed63a69f2e0b88aac79b3bf64c1584786f",
+    "fail": "0x6c986f01a4f303eacae739fbda6e0de9c2d2ddd9be5beac22265a2d821e2a4f1",
+    "success": "0xba9a87b511f0427a8a7d39c4fb9350ac2b04530d14a4f9e2d102a6526ce6a450",
+    "errorSig": "custom:0xa62297a2",
+    "nextFailure": "0x751bb82073a77b1032c3c1dd795e50a53e48f81b701f4b50d8ce019ea52bb0ce"
+  },
+  {
+    "chain": "ethereum",
+    "wallet": "0xc394159bb5e7bd2c60d11c1c6dec15e164f228e8",
+    "contract": "0x278d858f05b94576c1e6f73285886876ff6ef8d2",
+    "fail": "0x2f78287ab57bdffd3c9e080b230d9e6db451418373f1aa698c7ba1bbda5e9ee7",
+    "success": "0xfdf4bad5ee50f7af871c61ca6e3b94dd1a1c01a62e14cecc93f484ba7bbec9dc",
+    "errorSig": "revert:insufficient_output_amount",
+    "nextFailure": "0x5bb09be582ee998a31d503ce72914cd3c09fd48b0d14a91b82d04425892a6197"
+  },
+  {
+    "chain": "ethereum",
+    "wallet": "0xaffa7d95ea5984a18e1b4d6f38c1175bdb18a793",
+    "contract": "0xdbeb05b1bf12723ab3cdc28ceb23751390054759",
+    "fail": "0xd55c0f54b9b10b56cf83ec4c919224adca39c5ffd825486129f95c4f850b8a20",
+    "success": "0x539321141eb96164edb752ec9217abfe86352a85cba891e3cde7998858dd7565",
+    "errorSig": "revert:expired",
+    "nextFailure": "0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade"
+  },
+  {
+    "chain": "polygon",
+    "wallet": "0xa958f1d2a7f2c5720682d48f7ea036d4cdd0cb5c",
+    "contract": "0xc39efa2c1d747626ae2dfec3819af2e06db9cf6d",
+    "fail": "0x08272ab634d6c29f7e7bc88dc56e90d8a890f9bd0f6f9d6d565f37d359492f81",
+    "success": "0x4585b6616d246a6bb72395ed82f43fb1a149e0bab11395f294bdce71af474070",
+    "errorSig": "revert:spl",
+    "nextFailure": "0xe8f968a04eddddd345a5974cdddc78e5d388a6c54b2d523441d6347ce44cdf9f"
+  },
+  {
+    "chain": "polygon",
+    "wallet": "0x909e0718f5f843adeef10fc8f9207ac06d4c149f",
+    "contract": "0x07d79f0f6879f4d555431573320236628d16083e",
+    "fail": "0x8df5279ed8f62b17ee609032aaf981a91165f2b9e4f8c1803fff6f030dfd81f4",
+    "success": "0xe789fdd6fbde53f685d5cb6421d9caac4b607a28a8fae459b7b404eefec13ddb",
+    "errorSig": "revert:gelatorelayconcurrentercn_callwithsyncfeeconcurrentercn:tokenmintcheckoutbase:_checkout_time_window_has_expired",
+    "nextFailure": null
+  }
+]

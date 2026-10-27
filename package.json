@@ -1,0 +1,28 @@
+{
+  "name": "clew",
+  "version": "1.0.0",
+  "description": "Clew: failed tx -> successful retry -> Walrus memory -> next failure gets the prior path",
+  "scripts": {
+    "test": "node --import tsx --test tests/*.test.ts",
+    "demo": "tsx scripts/demo.ts",
+    "check": "tsx scripts/check.ts",
+    "record": "tsx scripts/record.ts",
+    "discover": "tsx scripts/discover.ts",
+    "typecheck": "tsc -p ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "@mysten-incubation/memwal": "^0.1.10"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
