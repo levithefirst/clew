@@ -33,7 +33,7 @@ export default async function Account() {
           <div className="flex items-center gap-4 px-5 py-6 sm:px-7">
             <Avatar src={u.image} name={u.name ?? u.email} className="size-14 text-body" />
             <div className="min-w-0">
-              <h1 id="profile-h" className="truncate text-[1.375rem] font-[620] leading-tight tracking-[-0.02em] text-ink">{u.name ?? "Your account"}</h1>
+              <h1 id="profile-h" className="truncate text-[1.375rem] leading-tight text-ink">{u.name ?? "Your account"}</h1>
               {u.email && <p className="mt-0.5 truncate text-small text-ink-3">{u.email}</p>}
             </div>
           </div>

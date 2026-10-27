@@ -1,37 +1,28 @@
 "use client";
-import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { clip, formatNextAction, parseNextAction } from "@/lib/advice";
 import { cn } from "@/lib/utils";
+import { useCopy } from "@/lib/use-copy";
 
 /** Copy-ready next action: calldata word changes, then the gas floor, qualified. Full values go to the clipboard. */
 export function NextAction({ nextAction, className }: { nextAction: string; className?: string }) {
   const a = parseNextAction(nextAction);
   const text = formatNextAction(a);
   const n = (x: string | number) => Number(x).toLocaleString("en-US");
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* clipboard unavailable: ignore */
-    }
-  };
+  const [copied, copy] = useCopy();
   return (
     <div className={cn("overflow-hidden rounded-xl border border-line-strong bg-raised", className)}>
       <div className="flex items-center gap-3 border-b px-3.5 py-2">
         <span className="eyebrow !text-brand">Next action</span>
         <button
           type="button"
-          onClick={copy}
+          onClick={() => void copy(text)}
           className="ml-auto inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg bg-brand-fill px-2.5 text-label font-[580] text-on-brand hover:bg-brand-fill-hover"
         >
-          {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
-          {copied ? "Copied" : "Copy suggestion"}
+          {copied === "ok" ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+          {copied === "ok" ? "Copied" : copied === "err" ? "Copy failed" : "Copy suggestion"}
         </button>
-        <span aria-live="polite" className="sr-only">{copied ? "Suggestion copied" : ""}</span>
+        <span aria-live="polite" className="sr-only">{copied === "ok" ? "Suggestion copied" : copied === "err" ? "Copy failed" : ""}</span>
       </div>
       <ul className="space-y-2.5 px-3.5 py-3 text-small text-ink-2">
         {a.callInstead && (

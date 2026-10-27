@@ -25,53 +25,34 @@ const STEPS = [
   },
 ] as const;
 
-function Connector() {
-  // Thread linking the three steps (desktop). Knots mark each step; the last one is the payoff.
-  return (
-    <svg aria-hidden viewBox="0 0 1000 40" preserveAspectRatio="none" className="absolute inset-x-0 top-[22px] hidden h-10 w-full lg:block" fill="none">
-      <path d="M22 20 C 120 2 250 38 362 20 S 590 2 703 20 S 900 38 1000 20" stroke="var(--line-strong)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-      <path d="M703 20 S 900 38 1000 20" stroke="var(--brand)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-}
-
 export function HowItWorks() {
   return (
     <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-t">
       <div className="mx-auto max-w-[72rem] px-5 py-24 sm:px-8 sm:py-28 lg:px-12">
         <Reveal className="max-w-[40rem]">
           <p className="eyebrow">How it works</p>
-          <h2 id="how-h" className="mt-3 text-[1.875rem] font-[620] leading-[1.15] tracking-[-0.03em] text-ink sm:text-title">
+          <h2 id="how-h" className="mt-3 text-[1.875rem] leading-[1.15] text-ink sm:text-title">
             One loop. Failure, the retry that worked, and the next failure that doesn’t start from zero.
           </h2>
         </Reveal>
 
-        <div className="relative mt-14">
-          <Connector />
-          <ol className="relative grid gap-5 lg:grid-cols-3 lg:gap-6">
-            {STEPS.map((s, i) => (
-              <Reveal as="li" key={s.n} delay={i * 90} className="relative flex flex-col">
-                <div className="mb-5 hidden h-[44px] items-center lg:flex">
-                  <span className={`relative grid size-[44px] place-items-center rounded-full border bg-canvas ${i === 2 ? "border-brand/60" : "border-line-strong"}`}>
-                    <span className={`size-2.5 rounded-full ${i === 2 ? "bg-brand" : i === 0 ? "bg-fail" : "bg-ok"}`} />
-                  </span>
-                </div>
-                <div className={`card flex flex-1 flex-col p-6 sm:p-7 ${i === 2 ? "ring-1 ring-brand/25" : ""}`}>
-                  <div className="flex items-center gap-3">
-                    <span className="num font-mono text-small text-ink-4">{s.n}</span>
-                    <span className={`size-1.5 rounded-full lg:hidden ${i === 2 ? "bg-brand" : i === 0 ? "bg-fail" : "bg-ok"}`} aria-hidden />
-                  </div>
-                  <h3 className="mt-3 text-[1.25rem] font-[600] tracking-[-0.015em] text-ink">{s.title}</h3>
-                  <p className="mb-6 mt-2.5 text-body-sm text-ink-3 text-pretty">{s.body}</p>
-                  <div className="mt-auto flex flex-wrap items-center gap-2 border-t pt-4">
-                    <span className={`rounded-md px-2 py-0.5 text-label font-[560] ${i === 0 ? "bg-fill text-ink-2" : "bg-brand-soft text-brand"}`}>{s.tag}</span>
-                    <span className="font-mono text-label text-ink-4">{s.detail}</span>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </ol>
-        </div>
+        <ol className="mt-12 border-t">
+          {STEPS.map((s, i) => (
+            <Reveal as="li" key={s.n} delay={i * 90} className="grid gap-x-10 gap-y-3 border-b py-8 md:grid-cols-[13rem_1fr]">
+              <div className="flex items-baseline gap-3 md:flex-col md:gap-1.5">
+                <span className={`num font-mono text-small ${i === 2 ? "text-brand" : "text-ink-4"}`}>{s.n}</span>
+                <h3 className="text-[1.25rem] font-[600] tracking-[-0.015em] text-ink">{s.title}</h3>
+              </div>
+              <div className="min-w-0">
+                <p className="max-w-[44rem] text-body-sm text-ink-3 text-pretty">{s.body}</p>
+                <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <span className={`rounded-md px-2 py-0.5 text-label font-[560] ${i === 0 ? "bg-fill text-ink-2" : "bg-brand-soft text-brand"}`}>{s.tag}</span>
+                  <span className="font-mono text-label text-ink-4">{s.detail}</span>
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </ol>
 
         <Reveal className="mt-10 grid gap-4 text-body-sm text-ink-3 sm:grid-cols-2">
           <p className="text-pretty">

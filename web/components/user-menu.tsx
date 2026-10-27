@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { LogOut, UserRound } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { AuthButtons } from "@/components/auth-buttons";
 import { cn } from "@/lib/utils";
@@ -49,7 +48,7 @@ export function UserMenu({ auth, className }: { auth: Status; className?: string
           </div>
           <div className="my-1 h-px bg-line" />
           <a role="menuitem" href="/account" className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-small text-ink-2 hover:bg-fill-hover hover:text-ink">
-            <UserRound className="size-4 text-ink-4" aria-hidden /> Account
+            Account
           </a>
           <button
             role="menuitem"
@@ -57,7 +56,7 @@ export function UserMenu({ auth, className }: { auth: Status; className?: string
             onClick={() => void signOut({ redirectTo: "/" })}
             className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-small text-ink-2 hover:bg-fill-hover hover:text-ink"
           >
-            <LogOut className="size-4 text-ink-4" aria-hidden /> Sign out
+            Sign out
           </button>
         </div>
       )}

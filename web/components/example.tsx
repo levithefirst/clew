@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Hash } from "@/components/hash";
 import { DATA, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, type Memory } from "@/lib/data";
 import { clip } from "@/lib/advice";
@@ -115,7 +115,7 @@ export function Example() {
                   <li key={a.index} className="grid grid-cols-[3.5rem_1fr] items-center gap-2 px-3.5 py-2 font-mono text-[0.75rem] sm:grid-cols-[3.5rem_1fr_auto_1fr]">
                     <span className="text-ink-4">arg {a.index}</span>
                     <span className="truncate text-ink-3 line-through decoration-fail/50" title={a.from}>{clip(a.from, 24)}</span>
-                    <ArrowRight className="hidden size-3 text-ink-4 sm:block" aria-hidden />
+                    <span className="hidden text-ink-4 sm:block" aria-hidden>→</span>
                     <span className="col-start-2 truncate text-ink sm:col-start-auto" title={a.to}>{clip(a.to, 24)}</span>
                   </li>
                 ))}

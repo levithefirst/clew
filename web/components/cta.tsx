@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { GitHubIcon } from "@/components/brand-icons";
 import { useSession } from "next-auth/react";
@@ -7,6 +6,7 @@ import { AuthButtons } from "@/components/auth-buttons";
 import { Mark } from "@/components/logo";
 import { SITE } from "@/lib/site";
 import { HERO } from "@/lib/data";
+import { useCopy } from "@/lib/use-copy";
 
 // Display lines (with a wrapped hash) and the exact text that Copy puts on the clipboard.
 const H = HERO.recall.failure_tx;
@@ -25,15 +25,8 @@ const CLIPBOARD = [
 ].join("\n");
 
 export function Cta({ auth }: { auth: { google: boolean; github: boolean } }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, copy] = useCopy(1400);
   const signedIn = useSession().status === "authenticated";
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(CLIPBOARD);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1400);
-    } catch {}
-  };
   return (
     <section aria-labelledby="cta-h" className="border-t">
       <div className="mx-auto max-w-[72rem] px-5 py-24 sm:px-8 sm:py-28 lg:px-12">
@@ -42,7 +35,7 @@ export function Cta({ auth }: { auth: { google: boolean; github: boolean } }) {
           <div className="relative grid gap-12 p-7 sm:p-10 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:p-14">
             <div>
               <Mark className="size-10 text-ink" />
-              <h2 id="cta-h" className="mt-6 text-[1.875rem] font-[620] leading-[1.12] tracking-[-0.03em] text-ink text-balance sm:text-title">
+              <h2 id="cta-h" className="mt-6 text-[1.875rem] leading-[1.12] text-ink text-balance sm:text-title">
                 The next revert should come with directions.
               </h2>
               <p className="mt-4 max-w-[30rem] text-body text-ink-3 text-pretty">
@@ -67,13 +60,10 @@ export function Cta({ auth }: { auth: { google: boolean; github: boolean } }) {
 
             <div className="min-w-0 overflow-hidden rounded-xl border bg-canvas">
               <div className="flex items-center gap-2 border-b px-4 py-2.5">
-                <span className="size-2.5 rounded-full bg-line-strong" aria-hidden />
-                <span className="size-2.5 rounded-full bg-line-strong" aria-hidden />
-                <span className="size-2.5 rounded-full bg-line-strong" aria-hidden />
-                <span className="ml-2 text-label text-ink-4">Run it locally</span>
-                <button type="button" onClick={copy} aria-label="Copy commands" className="ml-auto inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2 text-label text-ink-3 hover:bg-fill-hover hover:text-ink">
-                  {copied ? <Check className="size-3.5 text-ok" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
-                  {copied ? "Copied" : "Copy"}
+                <span className="text-label text-ink-4">Run it locally</span>
+                <button type="button" onClick={() => void copy(CLIPBOARD)} aria-label="Copy commands" className="ml-auto inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2 text-label text-ink-3 hover:bg-fill-hover hover:text-ink">
+                  {copied === "ok" ? <Check className="size-3.5 text-ok" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+                  {copied === "ok" ? "Copied" : copied === "err" ? "Copy failed" : "Copy"}
                 </button>
               </div>
               <pre className="overflow-x-auto p-4 font-mono text-[0.78rem] leading-[1.9] text-ink-2">

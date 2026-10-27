@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "@/components/session-provider";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans", display: "swap" });
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
+const display = Newsreader({ subsets: ["latin"], variable: "--font-newsreader", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Clew: remember the retry that worked", template: "%s · Clew" },
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn(sans.variable, mono.variable)}>
+    <html lang="en" suppressHydrationWarning className={cn(sans.variable, mono.variable, display.variable)}>
       <body className="min-h-dvh">
         <noscript>
           <style>{`.reveal{opacity:1!important;transform:none!important}`}</style>

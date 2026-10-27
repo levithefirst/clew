@@ -24,10 +24,10 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
   return (
     <>
       <SiteHeader auth={AUTH_STATUS} />
-      <main id="main" className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-[72rem] items-center justify-center px-5 py-16 sm:px-8">
+      <main id="main" className="mx-auto flex min-h-[calc(100dvh-3.5rem)] max-w-[72rem] items-center justify-center px-5 py-16 sm:px-8">
         <div className="card w-full max-w-[26rem] px-6 py-8 sm:px-8">
           <Mark className="size-9" />
-          <h1 className="mt-5 text-[1.5rem] font-[620] leading-tight tracking-[-0.025em] text-ink">Sign in to Clew</h1>
+          <h1 className="mt-5 text-[1.5rem] leading-tight text-ink">Sign in to Clew</h1>
           <p className="mt-2 text-body-sm text-ink-3 text-pretty">
             Optional. The demo works without an account.
           </p>

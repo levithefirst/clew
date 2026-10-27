@@ -16,12 +16,15 @@ const META: Record<Provider, { label: string; Icon: typeof GoogleIcon; env: stri
 /** Sign-in buttons wired to Auth.js. If a provider isn't configured, show a quiet notice instead of erroring. */
 export function AuthButtons({ status, size = "sm", className, redirectTo = "/account" }: { status: Status; size?: "sm" | "lg"; className?: string; redirectTo?: string }) {
   const [notice, setNotice] = useState<Provider | null>(null);
+  const [pending, setPending] = useState<Provider | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const go = useCallback(
     (p: Provider) => {
       if (status[p]) {
-        void signIn(p, { redirectTo });
+        setPending(p);
+        // On success the browser leaves for the provider; if the request itself fails, re-enable the button.
+        signIn(p, { redirectTo }).catch(() => setPending(null));
         return;
       }
       setNotice(p);
@@ -47,16 +50,22 @@ export function AuthButtons({ status, size = "sm", className, redirectTo = "/acc
               key={p}
               type="button"
               onClick={() => go(p)}
+              disabled={pending !== null}
+              aria-busy={pending === p}
               className={cn(
-                "inline-flex cursor-pointer items-center justify-center whitespace-nowrap border border-line-strong bg-raised font-[530] text-ink-2 hover:bg-fill-hover hover:text-ink",
+                "inline-flex cursor-pointer items-center disabled:cursor-wait disabled:opacity-60 justify-center whitespace-nowrap border border-line-strong bg-raised font-[530] text-ink-2 hover:bg-fill-hover hover:text-ink",
                 btn,
               )}
             >
               <Icon className={size === "lg" ? "size-[18px]" : "size-4"} />
-              <span>
-                <span className={size === "sm" ? "hidden xl:inline" : undefined}>Continue with </span>
-                {label}
-              </span>
+              {pending === p ? (
+                <span>Redirecting to {label}…</span>
+              ) : (
+                <span>
+                  <span className={size === "sm" ? "hidden xl:inline" : undefined}>Continue with </span>
+                  {label}
+                </span>
+              )}
             </button>
           );
         })}

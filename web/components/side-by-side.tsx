@@ -1,4 +1,3 @@
-import { X, Check } from "lucide-react";
 import { Reveal } from "@/components/reveal";
 import { Hash } from "@/components/hash";
 import { NextAction } from "@/components/next-action";
@@ -14,7 +13,7 @@ export function SideBySide() {
       <div className="mx-auto max-w-[72rem] px-5 py-24 sm:px-8 sm:py-28 lg:px-12">
         <Reveal className="max-w-[42rem]">
           <p className="eyebrow">Same failure, twice</p>
-          <h2 id="same-failure-h" className="mt-3 text-[1.875rem] font-[620] leading-[1.15] tracking-[-0.03em] text-ink sm:text-title">
+          <h2 id="same-failure-h" className="mt-3 text-[1.875rem] leading-[1.15] text-ink sm:text-title">
             Without memory, a shrug. With memory, the path that worked.
           </h2>
         </Reveal>
@@ -34,7 +33,6 @@ export function SideBySide() {
           {/* Without memory */}
           <div className="card flex flex-col px-5 py-6 sm:px-7">
             <p className="flex items-center gap-2 text-body-sm font-[580] text-ink-3">
-              <span className="inline-flex size-6 items-center justify-center rounded-full bg-fill text-ink-4"><X className="size-3.5" aria-hidden /></span>
               Without memory
             </p>
             <p className="mt-4 rounded-lg border border-dashed bg-fill/50 px-4 py-3.5 font-mono text-[0.8125rem] leading-relaxed text-ink-3 break-words">
@@ -46,7 +44,6 @@ export function SideBySide() {
           {/* With memory */}
           <div className="card flex flex-col border-brand/40 bg-brand-soft/50 px-5 py-6 sm:px-7">
             <p className="flex items-center gap-2 text-body-sm font-[580] text-ink">
-              <span className="inline-flex size-6 items-center justify-center rounded-full bg-brand-fill text-on-brand"><Check className="size-3.5" aria-hidden /></span>
               With memory
             </p>
             <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink">

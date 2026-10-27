@@ -16,7 +16,7 @@ export function ExampleSection() {
         <Reveal className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-[42rem]">
             <p className="eyebrow">Real example</p>
-            <h2 id="example-h" className="mt-3 text-[1.875rem] font-[620] leading-[1.15] tracking-[-0.03em] text-ink sm:text-title">
+            <h2 id="example-h" className="mt-3 text-[1.875rem] leading-[1.15] text-ink sm:text-title">
               Real failures, the retries that fixed them, and what recall returned.
             </h2>
             <p className="mt-4 text-body text-ink-3 text-pretty">

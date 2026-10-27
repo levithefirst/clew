@@ -1,4 +1,3 @@
-import { ArrowRight } from "lucide-react";
 import { GitHubIcon } from "@/components/brand-icons";
 import { Hash } from "@/components/hash";
 import { HERO, CHAIN_LABEL, txUrl, blobUrl, explorerName } from "@/lib/data";
@@ -40,26 +39,21 @@ export function Hero() {
   const { recall, memory } = HERO;
   const lines = adviceLines(recall.with_memory.next_action, 3);
   return (
-    <section id="top" className="relative isolate overflow-hidden">
-      <div className="grid-fade absolute inset-0 -z-20" aria-hidden />
+    <section className="relative isolate overflow-hidden">
       <HeroThread />
-      <div className="mx-auto grid max-w-[72rem] gap-14 px-5 pb-20 pt-14 sm:px-8 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-12 lg:px-12 lg:pb-28 lg:pt-24">
+      <div className="mx-auto grid max-w-[72rem] gap-14 px-5 pb-20 pt-12 sm:px-8 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-12 lg:px-12 lg:pb-28 lg:pt-20">
         <div>
-          <p className="rise inline-flex items-center gap-2 rounded-full border bg-raised/60 px-3 py-1 text-label font-[500] text-ink-3 backdrop-blur">
-            <span className="size-1.5 rounded-full bg-brand" aria-hidden />
-            Tatum RPC × Walrus Memory · on Mainnet
-          </p>
-          <h1 className="rise-2 mt-6 text-[2.625rem] font-[640] leading-[1.02] tracking-[-0.04em] text-balance text-ink sm:text-[3.5rem] lg:text-display">
-            Stop guessing why it reverted. <span className="bg-linear-to-br from-brand-hi via-brand to-brand-deep bg-clip-text text-brand [-webkit-text-fill-color:transparent] dark:to-brand">Clew remembers what worked.</span>
+          <h1 className="rise-2 text-[2.625rem] leading-[1.02] text-balance text-ink sm:text-[3.5rem] lg:text-display">
+            Stop guessing why it reverted. <span className="text-brand">Clew remembers what worked.</span>
           </h1>
           <p className="rise-3 mt-6 max-w-[34rem] text-lead text-ink-3 text-pretty">
             The next time the same contract fails with a similar error, Clew surfaces the exact retry that succeeded before (the calldata change, the gas, the nonce) instead of a generic <span className="whitespace-nowrap font-mono text-[0.95em] text-ink-2">“transaction reverted”</span>.
           </p>
           <div className="rise-4 mt-9 flex flex-wrap items-center gap-3">
             <a href="#same-failure" className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-fill px-5 text-body-sm font-[580] text-on-brand hover:bg-brand-fill-hover">
-              See a real recall <ArrowRight className="size-4" aria-hidden />
+              See a real recall
             </a>
-            <a href={SITE.repo} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-raised/60 px-5 text-body-sm font-[540] text-ink-2 backdrop-blur hover:bg-fill-hover hover:text-ink">
+            <a href={SITE.repo} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-raised px-5 text-body-sm font-[540] text-ink-2 hover:bg-fill-hover hover:text-ink">
               <GitHubIcon className="size-4" /> View the code
             </a>
           </div>
@@ -77,7 +71,7 @@ export function Hero() {
           <div className="px-5 py-5">
             <p className="eyebrow">Without Clew</p>
             <p className="mt-2.5 rounded-lg border border-dashed bg-fill/60 px-3.5 py-3 font-mono text-[0.8125rem] leading-relaxed text-ink-3">
-              <span className="text-fail">✕</span> Tx reverted <span className="text-ink-4">({recall.error})</span>
+              Tx reverted <span className="text-ink-4">({recall.error})</span>
               <br />
               <span className="text-ink-4">No prior successful path on record. Check params and retry.</span>
             </p>
@@ -87,7 +81,6 @@ export function Hero() {
             <p className="eyebrow !text-brand">With Clew</p>
             <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-ink">
               <span className="font-[580]">Retry that worked</span>
-              <ArrowRight className="size-3.5 text-brand" aria-hidden />
               <Hash value={recall.with_memory.prior_success} href={txUrl(recall.chain, recall.with_memory.prior_success)} label="successful retry" linkLabel={explorerName[recall.chain]} className="text-ink" />
               <span className="num text-small text-ink-4">block {recall.with_memory.block.toLocaleString("en-US")}</span>
             </p>
