@@ -7,3 +7,6 @@ export const SITE = {
   tatum: "https://tatum.io",
   walrus: "https://memory.walrus.xyz",
 } as const;
+
+/** Set the first time /account renders the welcome, so it shows once per browser. */
+export const WELCOMED_COOKIE = "clew_welcomed";

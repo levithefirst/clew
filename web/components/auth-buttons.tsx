@@ -14,21 +14,21 @@ const META: Record<Provider, { label: string; Icon: typeof GoogleIcon; env: stri
 };
 
 /** Sign-in buttons wired to Auth.js. If a provider isn't configured, show a quiet notice instead of erroring. */
-export function AuthButtons({ status, size = "sm", className }: { status: Status; size?: "sm" | "lg"; className?: string }) {
+export function AuthButtons({ status, size = "sm", className, redirectTo = "/account" }: { status: Status; size?: "sm" | "lg"; className?: string; redirectTo?: string }) {
   const [notice, setNotice] = useState<Provider | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const go = useCallback(
     (p: Provider) => {
       if (status[p]) {
-        void signIn(p);
+        void signIn(p, { redirectTo });
         return;
       }
       setNotice(p);
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setNotice(null), 5200);
     },
-    [status],
+    [status, redirectTo],
   );
   useEffect(() => () => clearTimeout(timer.current), []);
 

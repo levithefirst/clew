@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { GitHubIcon } from "@/components/brand-icons";
+import { useSession } from "next-auth/react";
 import { AuthButtons } from "@/components/auth-buttons";
 import { Mark } from "@/components/logo";
 import { SITE } from "@/lib/site";
@@ -25,6 +26,7 @@ const CLIPBOARD = [
 
 export function Cta({ auth }: { auth: { google: boolean; github: boolean } }) {
   const [copied, setCopied] = useState(false);
+  const signedIn = useSession().status === "authenticated";
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(CLIPBOARD);
@@ -52,8 +54,14 @@ export function Cta({ auth }: { auth: { google: boolean; github: boolean } }) {
                 </a>
               </div>
               <div className="mt-6 border-t pt-6">
-                <p className="mb-3 text-small text-ink-4">Or sign in (optional)</p>
-                <AuthButtons status={auth} size="lg" className="flex-wrap" />
+                {signedIn ? (
+                  <a href="/account" className="text-small font-[540] text-ink-3 hover:text-brand">You’re signed in. Go to your account →</a>
+                ) : (
+                  <>
+                    <p className="mb-3 text-small text-ink-4">Or sign in (optional)</p>
+                    <AuthButtons status={auth} size="lg" className="flex-wrap" />
+                  </>
+                )}
               </div>
             </div>
 

@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { AuthButtons } from "@/components/auth-buttons";
+import { UserMenu, MobileUserMenu } from "@/components/user-menu";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "#how", label: "How it works" },
-  { href: "#example", label: "Example" },
+  { href: "/#how", label: "How it works" },
+  { href: "/#example", label: "Example" },
 ];
 
 export function SiteHeader({ auth }: { auth: { google: boolean; github: boolean } }) {
@@ -35,7 +35,7 @@ export function SiteHeader({ auth }: { auth: { google: boolean; github: boolean 
       )}
     >
       <div className="mx-auto flex h-16 w-full max-w-[72rem] items-center gap-8 px-5 sm:px-8 lg:px-12">
-        <a href="#top" aria-label="Clew home" className="shrink-0 rounded-md">
+        <a href="/#top" aria-label="Clew home" className="shrink-0 rounded-md">
           <Logo />
         </a>
         <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
@@ -48,7 +48,7 @@ export function SiteHeader({ auth }: { auth: { google: boolean; github: boolean 
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           <span className="mx-1 hidden h-5 w-px bg-line-strong md:block" aria-hidden />
-          <AuthButtons status={auth} className="hidden md:flex" />
+          <UserMenu auth={auth} className="hidden md:flex" />
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -68,7 +68,7 @@ export function SiteHeader({ auth }: { auth: { google: boolean; github: boolean 
               {n.label}
             </a>
           ))}
-          <AuthButtons status={auth} size="lg" className="mt-5 flex-col items-stretch [&>button]:w-full" />
+          <MobileUserMenu auth={auth} onNavigate={() => setOpen(false)} />
         </nav>
       </div>
     </header>

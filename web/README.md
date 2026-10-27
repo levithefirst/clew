@@ -11,4 +11,4 @@ npm run data       # regenerate data/clew.json from ../memories.json, ../demo-ou
 ```
 
 - All data is static and comes from `data/clew.json`, which is generated from the core's real Mainnet memories and the demo run. The web app makes no live Tatum or Walrus calls and needs no secrets.
-- Sign-in is optional. Copy `.env.example` to `.env.local` and set `AUTH_SECRET` plus the Google and/or GitHub OAuth IDs. A provider that isn't configured shows a "not configured" notice, and nothing on the page is gated behind sign-in.
+- Sign-in is optional. Copy `.env.example` to `.env.local` and set `AUTH_SECRET` plus the Google and/or GitHub OAuth IDs. A provider that isn't configured shows a "not configured" notice, and nothing on the landing page is gated behind sign-in. After sign-in users land on `/account` (profile, provider, next steps); `/signin` is the themed sign-in and error page.

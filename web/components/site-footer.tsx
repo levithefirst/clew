@@ -11,9 +11,9 @@ export function SiteFooter() {
           <p className="text-small text-ink-4">Built for the Tatum × Walrus Memory Total Recall hackathon.</p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-6 gap-y-2 text-small text-ink-3 md:ml-auto">
-          <a href="#how" className="hover:text-ink">How it works</a>
-          <a href="#same-failure" className="hover:text-ink">Before / after</a>
-          <a href="#example" className="hover:text-ink">Example</a>
+          <a href="/#how" className="hover:text-ink">How it works</a>
+          <a href="/#same-failure" className="hover:text-ink">Before / after</a>
+          <a href="/#example" className="hover:text-ink">Example</a>
           <a href={SITE.repo} target="_blank" rel="noreferrer" className="hover:text-ink">GitHub</a>
           <a href={SITE.tatum} target="_blank" rel="noreferrer" className="hover:text-ink">Tatum</a>
           <a href={SITE.walrus} target="_blank" rel="noreferrer" className="hover:text-ink">Walrus Memory</a>
