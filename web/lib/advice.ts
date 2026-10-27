@@ -4,7 +4,7 @@ export function adviceLines(nextAction: string, max = 4): string[] {
     .split(/;\s*/)
     .map((s) => s.trim())
     .filter(Boolean)
-    .filter((s) => !/^template tx/.test(s));
+    .filter((s) => !/^(template tx|rebuild params like tx)/.test(s));
   const out: string[] = [];
   for (const p of parts) {
     const reenc = p.match(/^(?:re-encode calldata: )?arg word (\d+) = (\S+) \(was (\S+)\)/);
@@ -29,10 +29,10 @@ export function adviceLines(nextAction: string, max = 4): string[] {
     }
     const more = p.match(/\+(\d+) more words differ/);
     if (more) {
-      out.push(`+${more[1]} more calldata word${more[1] === "1" ? "" : "s"} — rebuild params like the retry`);
+      out.push(`+${more[1]} more calldata word${more[1] === "1" ? "" : "s"}; rebuild params like the retry`);
       continue;
     }
-    out.push(p.replace(/ — rebuild params like tx \S+/, ""));
+    out.push(p.replace(/; rebuild params like tx \S+/, ""));
   }
   return out.slice(0, max);
 }

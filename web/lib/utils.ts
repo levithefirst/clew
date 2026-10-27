@@ -11,4 +11,4 @@ export function short(hex: string, head = 6, tail = 4) {
   return `${hex.slice(0, head)}…${hex.slice(-tail)}`;
 }
 
-export const fmt = (n: number | null | undefined) => (n == null ? "—" : n.toLocaleString("en-US"));
+export const fmt = (n: number | null | undefined) => (n == null ? "n/a" : n.toLocaleString("en-US"));

@@ -4,7 +4,7 @@ import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Clew mark: a wound ball of thread with one strand trailing out — the path back.
+ * Clew mark: a wound ball of thread with one strand trailing out, the path back.
  * Ribbon tone runs champagne highlight → shadow (--mark-hi → --mark-lo); the strand carries the accent.
  */
 export function Mark({ className, animated = false }: { className?: string; animated?: boolean }) {

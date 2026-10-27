@@ -2,7 +2,7 @@
 
 /*
   Clew design system. Neutral near-black canvas (dark, default) and warm paper (light).
-  One accent — champagne thread — reserved for the mark, CTAs, focus and "what worked".
+  One accent: champagne thread, reserved for the mark, CTAs, focus and "what worked".
   Components never use raw hex; everything goes through these tokens.
 */
 @custom-variant dark (&:where(.dark, .dark *));

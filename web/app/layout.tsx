@@ -9,9 +9,9 @@ const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans", display:
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Clew — remember the retry that worked", template: "%s · Clew" },
+  title: { default: "Clew: remember the retry that worked", template: "%s · Clew" },
   description: SITE.description,
-  openGraph: { title: "Clew — remember the retry that worked", description: SITE.description, type: "website" },
+  openGraph: { title: "Clew: remember the retry that worked", description: SITE.description, type: "website" },
 };
 
 export const viewport: Viewport = {

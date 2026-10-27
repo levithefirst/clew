@@ -1,4 +1,4 @@
-# Clew — web
+# Clew web
 
 Landing page for Clew. It is a separate Next.js app and does not touch the core in `..`.
 

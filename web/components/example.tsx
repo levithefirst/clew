@@ -103,8 +103,8 @@ export function Example() {
             <Row label="Gas used" failed={fmt(d.gasUsed?.failed)} success={fmt(d.gasUsed?.success)} />
             <Row label="Gas limit" failed={fmt(d.gasLimit?.failed)} success={fmt(d.gasLimit?.success)} />
             <Row label="Nonce" failed={fmt(d.nonce?.failed)} success={fmt(d.nonce?.success)} />
-            <Row label="Function" failed={d.selector?.failed ?? "—"} success={d.selector?.success ?? "—"} />
-            <Row label="Landed" failed="status 0x0" success={m.blocks_later != null ? `${m.blocks_later} blocks later` : "—"} mono={false} />
+            <Row label="Function" failed={d.selector?.failed ?? "n/a"} success={d.selector?.success ?? "n/a"} />
+            <Row label="Landed" failed="status 0x0" success={m.blocks_later != null ? `${m.blocks_later} blocks later` : "n/a"} mono={false} />
           </dl>
 
           {d.args.length > 0 && (
@@ -130,7 +130,7 @@ export function Example() {
           <div className="border-b px-5 py-6 sm:px-7 md:border-b-0 md:border-r">
             <p className="eyebrow">Without memory</p>
             <p className="mt-3 rounded-lg border border-dashed bg-fill/50 px-3.5 py-3 font-mono text-[0.78rem] leading-relaxed text-ink-3 break-words">
-              {recall ? recall.without_memory : `Tx ${short(m.failed_tx, 10, 6)} on ${m.chain} reverted (${m.error}). No prior successful path on record for this wallet+contract — check params and retry.`}
+              {recall ? recall.without_memory : `Tx ${short(m.failed_tx, 10, 6)} on ${m.chain} reverted (${m.error}). No prior successful path on record for this wallet+contract. Check params and retry.`}
             </p>
             {recall ? (
               <p className="mt-3 flex flex-wrap items-center gap-1.5 text-label text-ink-4">

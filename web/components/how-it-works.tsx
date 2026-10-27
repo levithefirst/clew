@@ -12,14 +12,14 @@ const STEPS = [
   {
     n: "02",
     title: "Successful retry",
-    body: "When the same wallet lands a successful call to the same contract minutes later, Clew diffs it against the failure — gas used and limit, gas price, nonce, function, each calldata word — and writes that path to Walrus Memory on Mainnet.",
+    body: "When the same wallet lands a successful call to the same contract minutes later, Clew diffs it against the failure: gas used and limit, gas price, nonce, function, each calldata word, and writes that path to Walrus Memory on Mainnet.",
     tag: "Walrus Memory · remember",
     detail: `namespace "${DATA.stats.namespace}" · waitForRememberJob`,
   },
   {
     n: "03",
     title: "Next failure",
-    body: "Same wallet, same contract, similar error: Clew recalls the memory and returns the retry that worked — the specific tx, what changed, and the next action — instead of a dead-end revert message.",
+    body: "Same wallet, same contract, similar error: Clew recalls the memory and returns the retry that worked: the specific tx, what changed, and the next action, instead of a dead-end revert message.",
     tag: "Walrus Memory · recall",
     detail: "prior success → next action",
   },

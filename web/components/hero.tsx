@@ -53,7 +53,7 @@ export function Hero() {
             Stop guessing why it reverted. <span className="bg-linear-to-br from-brand-hi via-brand to-brand-deep bg-clip-text text-brand [-webkit-text-fill-color:transparent] dark:to-brand">Clew remembers what worked.</span>
           </h1>
           <p className="rise-3 mt-6 max-w-[34rem] text-lead text-ink-3 text-pretty">
-            The next time the same contract fails with a similar error, Clew surfaces the exact retry that succeeded before — the calldata change, the gas, the nonce — instead of a generic <span className="whitespace-nowrap font-mono text-[0.95em] text-ink-2">“transaction reverted”</span>.
+            The next time the same contract fails with a similar error, Clew surfaces the exact retry that succeeded before (the calldata change, the gas, the nonce) instead of a generic <span className="whitespace-nowrap font-mono text-[0.95em] text-ink-2">“transaction reverted”</span>.
           </p>
           <div className="rise-4 mt-9 flex flex-wrap items-center gap-3">
             <a href="#example" className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-fill px-5 text-body-sm font-[580] text-on-brand hover:bg-brand-fill-hover">
@@ -79,7 +79,7 @@ export function Hero() {
             <p className="mt-2.5 rounded-lg border border-dashed bg-fill/60 px-3.5 py-3 font-mono text-[0.8125rem] leading-relaxed text-ink-3">
               <span className="text-fail">✕</span> Tx reverted <span className="text-ink-4">({recall.error})</span>
               <br />
-              <span className="text-ink-4">No prior successful path on record — check params and retry.</span>
+              <span className="text-ink-4">No prior successful path on record. Check params and retry.</span>
             </p>
           </div>
 
