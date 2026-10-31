@@ -158,7 +158,11 @@ export function Example() {
             </p>
             {action && <NextAction action={action} className="mt-3" />}
             <p className="mt-4 text-label text-ink-4">
-              {recall ? "Returned by recall in the Mainnet demo run." : "Stored on Walrus; returned on this pair’s next matching failure. No repeat failure was observed for it in the demo window."}
+              {recall
+                ? "Returned by recall in the Mainnet demo run."
+                : m.next_failure
+                  ? `Stored on Walrus. This wallet failed again (tx ${short(m.next_failure, 6, 4)}); recall has not been run on that failure yet.`
+                  : "Stored on Walrus; returned on this pair’s next matching failure. No repeat failure was observed for it in the demo window."}
             </p>
           </div>
         </div>
