@@ -1,0 +1,14 @@
+{
+  "_recorded": "Real recall run on Sui Mainnet through Tatum's Sui GraphQL gateway and Walrus Memory, 2026-10-31, as reported from the run with the project keys. Only the fields reported are kept; no without-memory run was made for this failure.",
+  "recalls": [
+    {
+      "chain": "sui",
+      "command": "npm run sui -- recall 6mDBLQjL4Ld48683HjpZnV4xBQEZB5ymohxzxNaYxcvM",
+      "failure_tx": "6mDBLQjL4Ld48683HjpZnV4xBQEZB5ymohxzxNaYxcvM",
+      "result": "WITH MEMORY",
+      "prior_success": "ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV",
+      "blob_id": "qNi52wSgAQz8iz2XcTpgbbXQL4A0KS3Z3focMSu7eUs",
+      "reason_line": "used 3411613 of 6410000 gas, not out of gas"
+    }
+  ]
+}

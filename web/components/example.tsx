@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Hash } from "@/components/hash";
-import { DATA, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, nextActionOf, type Memory } from "@/lib/data";
+import { DATA, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, nextActionOf, blockWord, type Memory } from "@/lib/data";
 import { clip } from "@/lib/advice";
 import { NextAction } from "@/components/next-action";
 import { WalletTag } from "@/components/wallet-tag";
@@ -90,7 +90,7 @@ export function Example() {
 
         <div className="px-5 py-6 sm:px-7">
           <p className="mb-5 text-label text-ink-4">
-            Wallet looks {m.wallet_class.label} (heuristic): {m.wallet_class.reasons.join("; ")}.
+            {m.wallet_class.label === "unclassified" ? "Wallet unclassified" : `Wallet looks ${m.wallet_class.label}`} (heuristic): {m.wallet_class.reasons.join("; ")}.
           </p>
           <p className="eyebrow">Error</p>
           <p className="mt-2 break-words font-mono text-body-sm text-fail">{m.error_detail ?? m.error}</p>
@@ -111,9 +111,9 @@ export function Example() {
             />
             <Row label="Gas used" failed={fmt(d.gasUsed?.failed)} success={fmt(d.gasUsed?.success)} />
             <Row label="Gas limit" failed={fmt(d.gasLimit?.failed)} success={fmt(d.gasLimit?.success)} />
-            <Row label="Nonce" failed={fmt(d.nonce?.failed)} success={fmt(d.nonce?.success)} />
-            <Row label="Function" failed={d.selector?.failed ?? "n/a"} success={d.selector?.success ?? "n/a"} />
-            <Row label="Landed" failed="status 0x0" success={m.blocks_later != null ? `${m.blocks_later} blocks later` : "n/a"} mono={false} />
+            {d.nonce && <Row label="Nonce" failed={fmt(d.nonce.failed)} success={fmt(d.nonce.success)} />}
+            <Row label="Function" failed={d.selector?.failed ?? m.selector} success={d.selector?.success ?? m.selector} />
+            <Row label="Landed" failed={m.chain === "sui" ? "FAILURE" : "status 0x0"} success={m.blocks_later != null ? `${m.blocks_later} ${blockWord(m.chain)}s later` : "n/a"} mono={false} />
           </dl>
 
           {d.args.length > 0 && (
@@ -139,11 +139,12 @@ export function Example() {
           <div className="border-b px-5 py-6 sm:px-7 md:border-b-0 md:border-r">
             <p className="eyebrow">Without memory</p>
             <p className="mt-3 rounded-lg border border-dashed bg-fill/50 px-3.5 py-3 font-mono text-[0.78rem] leading-relaxed text-ink-3 break-words">
-              {recall ? recall.without_memory : `Tx ${short(m.failed_tx, 10, 6)} on ${m.chain} reverted (${m.error}). No prior successful path on record for this wallet+contract. Check params and retry.`}
+              {recall?.without_memory ?? `Tx ${short(recall?.failure_tx ?? m.failed_tx, 10, 6)} on ${m.chain} reverted (${m.error}). No prior successful path on record for this wallet+contract. Check params and retry.`}
             </p>
             {recall ? (
               <p className="mt-3 flex flex-wrap items-center gap-1.5 text-label text-ink-4">
-                Repeat failure from the demo run <Hash value={recall.failure_tx} href={txUrl(m.chain, recall.failure_tx)} label="repeat failure" linkLabel={exp} />
+                Repeat failure <Hash value={recall.failure_tx} href={txUrl(m.chain, recall.failure_tx)} label="repeat failure" linkLabel={exp} />
+                {!recall.without_memory && <span>(generic message shown; the empty-namespace run was not made for this failure)</span>}
               </p>
             ) : (
               <p className="mt-3 text-label text-ink-4">The generic message Clew returns with an empty namespace.</p>
@@ -154,12 +155,12 @@ export function Example() {
             <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-ink">
               <span className="font-[580]">Prior success</span>
               <Hash value={m.success_tx} href={txUrl(m.chain, m.success_tx)} label="prior success" linkLabel={exp} className="text-ink" />
-              {m.success_block && <span className="num text-label text-ink-4">block {m.success_block.toLocaleString("en-US")}</span>}
+              {m.success_block && <span className="num text-label text-ink-4">{blockWord(m.chain)} {m.success_block.toLocaleString("en-US")}</span>}
             </p>
             {action && <NextAction action={action} className="mt-3" />}
             <p className="mt-4 text-label text-ink-4">
               {recall
-                ? "Returned by recall in the Mainnet demo run."
+                ? `Returned by recall: ${recall.source}.`
                 : m.next_failure
                   ? `Stored on Walrus. This wallet failed again (tx ${short(m.next_failure, 6, 4)}); recall has not been run on that failure yet.`
                   : "Stored on Walrus; returned on this pair’s next matching failure. No repeat failure was observed for it in the demo window."}

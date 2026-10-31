@@ -15,15 +15,16 @@ const out: Record<string, WalletClass & { wallet: string }> = {};
 for (const [key, m] of Object.entries(readLedger())) {
   const [chain, failed] = key.split(":");
   const nonce = m.text.match(/nonce (\d+) -> (\d+)/), later = m.text.match(/, (\d+) blocks? later/);
-  if (!nonce || !later) throw new Error(`${key}: memory text has no nonce or retry latency`);
+  if (!later) throw new Error(`${key}: memory text has no retry latency`);
+  if (!nonce && chain !== "sui") throw new Error(`${key}: memory text has no nonce`);
   const c = candidates(chain).find((x) => x.fail === failed);
   const cls = classifyWallet({
-    chain, nonce: Number(nonce[1]), retryNonce: Number(nonce[2]), retryBlocks: Number(later[1]),
+    chain, nonce: nonce ? Number(nonce[1]) : undefined, retryNonce: nonce ? Number(nonce[2]) : undefined, retryBlocks: Number(later[1]),
     calls: c?.total, fails: c?.fails, scanBlocks: c?.scanBlocks ?? scans[chain],
   });
   out[key] = { wallet: m.text.match(/wallet=(0x[0-9a-f]+)/)![1], ...cls };
   console.log(`${chain.padEnd(8)} ${failed.slice(0, 12)} ${cls.label.padEnd(10)} ${cls.reasons.join("; ")}`);
 }
 writeFileSync("fixtures/wallet-classes.json", JSON.stringify(out, null, 2) + "\n");
-const human = Object.values(out).filter((c) => c.label === "human-like").length;
-console.log(`${Object.keys(out).length} memories: ${human} human-like, ${Object.keys(out).length - human} bot-like`);
+const count = (l: WalletClass["label"]) => Object.values(out).filter((c) => c.label === l).length;
+console.log(`${Object.keys(out).length} memories: ${count("human-like")} human-like, ${count("bot-like")} bot-like, ${count("unclassified")} unclassified`);

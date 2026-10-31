@@ -56,7 +56,7 @@ export function HowItWorks() {
 
         <Reveal className="mt-10 grid gap-4 text-body-sm text-ink-3 sm:grid-cols-2">
           <p className="text-pretty">
-            <span className="font-[560] text-ink-2">Tatum is load-bearing.</span> Every receipt, transaction, block and revert reason comes from Tatum RPC gateways for Base, Ethereum and Polygon. No receipt, no memory.
+            <span className="font-[560] text-ink-2">Tatum is load-bearing.</span> Every receipt, transaction, block and revert reason comes from Tatum gateways: JSON-RPC for Base, Ethereum and Polygon, GraphQL for Sui. No receipt, no memory.
           </p>
           <p className="text-pretty">
             <span className="font-[560] text-ink-2">Walrus is load-bearing.</span> The path that worked lives only in Walrus Memory (MemWal, relayer.memory.walrus.xyz). Empty namespace in, generic revert out.

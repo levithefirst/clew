@@ -55,7 +55,7 @@ export function NextAction({ action: a, className }: { action: Action; className
           </Step>
         )}
       </ul>
-      <p className="border-t px-3.5 py-2 text-label text-ink-4">Copy includes full calldata words and the template tx.</p>
+      <p className="border-t px-3.5 py-2 text-label text-ink-4">Copy includes the full values and the template tx.</p>
     </div>
   );
 }

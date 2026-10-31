@@ -93,5 +93,19 @@
       "1,800,462 prior transactions",
       "6 calls to this contract in ~3 min (1 failed)"
     ]
+  },
+  "sui:FzUf8HxE3yeT4dVxNEvrtAoK99WCvDJkFBivGrUjoDYp:EthYTxV1SnLdTRuc4VAhBJ8Q7Lg8AvTykmCzYMWhrTtw": {
+    "wallet": "0xcde6dbe01902be1f200ff03dbbd149e586847be8cee15235f82750d9b06c0e04",
+    "label": "bot-like",
+    "reasons": [
+      "retried ~1s after failing"
+    ]
+  },
+  "sui:GXwW6feRx386m9W3z7UX9CRWAFNyuGETWPux6zZR48Vj:ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV": {
+    "wallet": "0x2174cf795d0db2ab95226ee91eadbe7630170b98061d373eb01424a0f75f05ef",
+    "label": "unclassified",
+    "reasons": [
+      "no account nonce on sui, so only retry latency was checked: retried ~106s after failing"
+    ]
   }
 }

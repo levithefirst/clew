@@ -39,7 +39,7 @@ export function ExampleSection() {
         </Reveal>
 
         <p className="mt-6 max-w-[48rem] text-small text-ink-4 text-pretty">
-          Honest note: most wallets that fail and retry within minutes are bots. By Clew’s heuristic, {s.memories - s.human_like} of these {s.memories} wallets are bot-like (huge nonce counts, retries within seconds, dozens of calls to one contract in a few minutes) and {s.human_like} shows no automation signal, so “what changed” is often a fresh quote rather than a human fix. Each wallet tag lists its reasons. Clew shows a gas hint only when the failed attempt actually ran out of gas; otherwise it shows the revert reason. Clew records what actually differed and lets you decide.
+          Honest note: most wallets that fail and retry within minutes are bots. By Clew’s heuristic, {s.bot_like} of these {s.memories} wallets are bot-like (huge nonce counts, retries within seconds, dozens of calls to one contract in a few minutes), {s.human_like} shows no automation signal, and {s.memories - s.bot_like - s.human_like} on Sui is unclassified because Sui has no account nonce to check, so “what changed” is often a fresh quote rather than a human fix. Each wallet tag lists its reasons. Clew shows a gas hint only when the failed attempt actually ran out of gas; otherwise it shows the revert reason. Clew records what actually differed and lets you decide.
         </p>
       </div>
     </section>

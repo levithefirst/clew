@@ -4,7 +4,7 @@ import { gateGasHints, parseNextAction, type NextAction } from "@/lib/advice";
 // Everything here is derived from the core's real artifacts (memories.json, demo-output.txt, fixtures/pairs.json)
 // by scripts/build-data.mjs. Nothing is fabricated or fetched at runtime.
 
-export type Chain = "base" | "ethereum" | "polygon";
+export type Chain = "base" | "ethereum" | "polygon" | "sui";
 export type Pair = { failed: number; success: number } | null;
 export interface Memory {
   key: string;
@@ -34,7 +34,7 @@ export interface Memory {
   next_action: string | null;
   text: string;
   /** Heuristic from src/classify.ts. "human-like" means no automation signal was seen, not a verified person. */
-  wallet_class: { label: "bot-like" | "human-like"; reasons: string[] };
+  wallet_class: { label: "bot-like" | "human-like" | "unclassified"; reasons: string[] };
   rev: number;
   supersedes: string | null;
 }
@@ -42,9 +42,12 @@ export interface Recall {
   chain: Chain;
   failure_tx: string;
   error: string;
-  without_memory: string;
+  /** null when only the with-memory recall was run for this failure. */
+  without_memory: string | null;
   with_memory: { prior_success: string; block: number; blob_id: string; change: string; next_action: string };
   memory_key: string;
+  /** Which real run produced this recall. */
+  source: string;
 }
 
 export const DATA = raw as unknown as {
@@ -56,6 +59,7 @@ export const DATA = raw as unknown as {
     distinct_contracts: number;
     recalls: number;
     human_like: number;
+    bot_like: number;
     namespace: string;
     relayer: string;
   };
@@ -64,16 +68,21 @@ export const DATA = raw as unknown as {
   counterfactual: { wallet: string; contract: string; result: string } | null;
 };
 
-export const CHAIN_LABEL: Record<Chain, string> = { base: "Base", ethereum: "Ethereum", polygon: "Polygon" };
+export const CHAIN_LABEL: Record<Chain, string> = { base: "Base", ethereum: "Ethereum", polygon: "Polygon", sui: "Sui" };
 
 const EXPLORER: Record<Chain, string> = {
   base: "https://basescan.org",
   ethereum: "https://etherscan.io",
   polygon: "https://polygonscan.com",
+  sui: "https://suiscan.xyz/mainnet",
 };
-export const explorerName: Record<Chain, string> = { base: "Basescan", ethereum: "Etherscan", polygon: "Polygonscan" };
+export const explorerName: Record<Chain, string> = { base: "Basescan", ethereum: "Etherscan", polygon: "Polygonscan", sui: "Suiscan" };
 export const txUrl = (c: Chain, h: string) => `${EXPLORER[c]}/tx/${h}`;
-export const addrUrl = (c: Chain, a: string) => `${EXPLORER[c]}/address/${a}`;
+/** Sui: a "contract" is package::module, linked as the package object; a wallet is an account. */
+export const addrUrl = (c: Chain, a: string) =>
+  c === "sui" ? `${EXPLORER[c]}/${a.includes("::") ? `object/${a.split("::")[0]}` : `account/${a}`}` : `${EXPLORER[c]}/address/${a}`;
+/** Sui counts checkpoints, not blocks. */
+export const blockWord = (c: Chain) => (c === "sui" ? "checkpoint" : "block");
 /** Walruscan Mainnet blob page. Clew memories are SEAL-encrypted: the page proves the blob exists, not its text. */
 export const blobUrl = (id: string) => `https://walruscan.com/mainnet/blob/${id}`;
 

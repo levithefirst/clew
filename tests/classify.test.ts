@@ -31,3 +31,13 @@ test("exact timestamps are reported without the ~ approximation", () => {
   const c = classifyWallet({ chain: "base", nonce: 3, retryNonce: 4, retryBlocks: 9, retrySeconds: 19 });
   assert.match(c.reasons[0], /retried 19s after failing/);
 });
+
+test("Sui (no account nonce): latency can still flag a bot, but no signal means unclassified, never human-like", () => {
+  // The two real Sui memories: retries 3 and 441 checkpoints after the failure.
+  const fast = classifyWallet({ chain: "sui", retryBlocks: 3 });
+  assert.equal(fast.label, "bot-like");
+  assert.deepEqual(fast.reasons, ["retried ~1s after failing"]);
+  const slow = classifyWallet({ chain: "sui", retryBlocks: 441 });
+  assert.equal(slow.label, "unclassified");
+  assert.deepEqual(slow.reasons, ["no account nonce on sui, so only retry latency was checked: retried ~106s after failing"]);
+});

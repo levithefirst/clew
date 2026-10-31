@@ -6,7 +6,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /** 0x389a50…0d03 style truncation for hashes and addresses. */
-export function short(hex: string, head = 6, tail = 4) {
+export function short(hex: string, head = 6, tail = 4): string {
+  if (hex?.includes("::")) { const [addr, ...rest] = hex.split("::"); return [short(addr, head, tail), ...rest].join("::"); } // Sui package::module
   if (!hex || hex.length <= head + tail + 3) return hex;
   return `${hex.slice(0, head)}…${hex.slice(-tail)}`;
 }

@@ -1,6 +1,6 @@
 // Derives web/data/clew.json from the core's real artifacts (../memories.json, ../demo-output.txt, ../fixtures/pairs.json).
 // Run once with `npm run data`; the output is committed so the web app is self-contained. No network, no secrets.
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -79,7 +79,21 @@ for (const m of demo.matchAll(re)) {
     chain: m[1], failure_tx: m[2], error: m[3], without_memory: undash(m[4].trim()),
     with_memory: { prior_success: m[5], block: Number(m[6]), blob_id: m[7], change: m[8].trim(), next_action: undash(m[9].trim()) },
     memory_key: out.find((o) => o.success_tx === m[5])?.key ?? null,
+    source: "npm run demo (Mainnet)",
   });
+}
+// Recalls run outside the demo script, recorded with what was reported (fixtures/sui-recall-*.json).
+for (const f of readdirSync(join(root, "fixtures")).filter((f) => /^sui-recall-.*\.json$/.test(f))) {
+  for (const r of JSON.parse(readFileSync(join(root, "fixtures", f), "utf8")).recalls) {
+    const mem = out.find((o) => o.success_tx === r.prior_success);
+    if (!mem || mem.blob_id !== r.blob_id) throw new Error(`${f}: recall of ${r.failure_tx} does not match a memory on file`);
+    recalls.push({
+      chain: r.chain, failure_tx: r.failure_tx, error: mem.error, without_memory: null,
+      with_memory: { prior_success: r.prior_success, block: mem.success_block, blob_id: r.blob_id, change: "", next_action: mem.next_action },
+      memory_key: mem.key,
+      source: `${r.command} (${f.match(/\d{4}-\d{2}-\d{2}/)[0]})`,
+    });
+  }
 }
 const cf = demo.match(/counterfactual: other wallet (0x[0-9a-f]+) failing on remembered contract (0x[0-9a-f]+)\n\s+-> (.*)/);
 const counterfactual = cf && { wallet: cf[1], contract: cf[2], result: undash(cf[3].trim()) };
@@ -93,6 +107,7 @@ const stats = {
   distinct_contracts: new Set(out.map((o) => `${o.chain}:${o.contract}`)).size,
   recalls: recalls.length,
   human_like: out.filter((o) => o.wallet_class?.label === "human-like").length,
+  bot_like: out.filter((o) => o.wallet_class?.label === "bot-like").length,
   namespace: [...new Set(out.map((o) => o.namespace))].join(","),
   relayer: "https://relayer.memory.walrus.xyz",
 };
@@ -102,5 +117,5 @@ for (const o of out) if (!o.wallet_class) throw new Error(`${o.key} has no walle
 // Headline preference: human-like wallets first (stable otherwise). The site's hero uses recalls[0].
 const isHuman = (key) => classes[key]?.label === "human-like";
 recalls.sort((a, b) => Number(isHuman(b.memory_key)) - Number(isHuman(a.memory_key)));
-writeFileSync(join(root, "web", "data", "clew.json"), JSON.stringify({ generated_from: ["memories.json", "demo-output.txt", "fixtures/pairs.json", "fixtures/wallet-classes.json"], stats, memories: out, recalls, counterfactual }, null, 2) + "\n");
+writeFileSync(join(root, "web", "data", "clew.json"), JSON.stringify({ generated_from: ["memories.json", "demo-output.txt", "fixtures/pairs.json", "fixtures/wallet-classes.json", "fixtures/sui-recall-*.json"], stats, memories: out, recalls, counterfactual }, null, 2) + "\n");
 console.log(stats, recalls.length, !!counterfactual);

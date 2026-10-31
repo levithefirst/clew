@@ -3,24 +3,28 @@
     "memories.json",
     "demo-output.txt",
     "fixtures/pairs.json",
-    "fixtures/wallet-classes.json"
+    "fixtures/wallet-classes.json",
+    "fixtures/sui-recall-*.json"
   ],
   "stats": {
-    "memories": 12,
-    "chains": 3,
+    "memories": 14,
+    "chains": 4,
     "chain_names": [
       "base",
       "ethereum",
-      "polygon"
+      "polygon",
+      "sui"
     ],
     "per_chain": {
       "base": 8,
       "ethereum": 2,
-      "polygon": 2
+      "polygon": 2,
+      "sui": 2
     },
-    "distinct_contracts": 12,
-    "recalls": 3,
+    "distinct_contracts": 14,
+    "recalls": 4,
     "human_like": 1,
+    "bot_like": 12,
     "namespace": "clew",
     "relayer": "https://relayer.memory.walrus.xyz"
   },
@@ -783,6 +787,90 @@
       },
       "next_action": "re-encode calldata: arg word 4 = 0xcce440a0d5…3bd24e (was 0xf0ea210b61…37fdc7); arg word 8 = 0x6c109e0a3d…edf139 (was 0xd05f3eb360…34e309); arg word 9 = 0x9012fb1767…2dae03 (was 0xb3eebacaad…fa77de); +17 more words differ; rebuild params like tx 0xe789fdd6fbde53f685d5cb6421d9caac4b607a28a8fae459b7b404eefec13ddb; template tx 0xe789fdd6fbde53f685d5cb6421d9caac4b607a28a8fae459b7b404eefec13ddb",
       "text": "CLEW chain=polygon contract=0x07d79f0f6879f4d555431573320236628d16083e wallet=0x909e0718f5f843adeef10fc8f9207ac06d4c149f error=revert:gelatorelayconcurrentercn_callwithsyncfeeconcurrentercn:tokenmintcheckoutbase:_checkout_time_window_has_expired selector=0xd39bd016 failed_tx=0x8df5279ed8f62b17ee609032aaf981a91165f2b9e4f8c1803fff6f030dfd81f4 success_tx=0xe789fdd6fbde53f685d5cb6421d9caac4b607a28a8fae459b7b404eefec13ddb success_block=96259983. Contract 0x07d79f0f6879f4d555431573320236628d16083e on polygon failed with error revert:gelatorelayconcurrentercn_callwithsyncfeeconcurrentercn:tokenmintcheckoutbase:_checkout_time_window_has_expired (GelatoRelayConcurrentERC2771.callWithSyncFeeConcurrentERC2771:TokenMintCheckoutBase: Checkout time window has expired.) for wallet 0x909e0718f5f843adeef10fc8f9207ac06d4c149f. Successful retry in tx 0xe789fdd6fbde53f685d5cb6421d9caac4b607a28a8fae459b7b404eefec13ddb at block 96259983, 9 blocks later. Change: gas used was 409928 vs 122885 on failure; gas limit 2000000 vs 2000000; nonce 1800462 -> 1800463; same function 0xd39bd016; calldata 20 arg word(s) changed (arg 4 0xf0ea210b61…37fdc7 -> 0xcce440a0d5…3bd24e, arg 8 0xd05f3eb360…34e309 -> 0x6c109e0a3d…edf139, arg 9 0xb3eebacaad…fa77de -> 0x9012fb1767…2dae03). NEXT_ACTION: re-encode calldata: arg word 4 = 0xcce440a0d5…3bd24e (was 0xf0ea210b61…37fdc7); arg word 8 = 0x6c109e0a3d…edf139 (was 0xd05f3eb360…34e309); arg word 9 = 0x9012fb1767…2dae03 (was 0xb3eebacaad…fa77de); +17 more words differ — rebuild params like tx 0xe789fdd6fbde53f685d5cb6421d9caac4b607a28a8fae459b7b404eefec13ddb; template tx 0xe789fdd6fbde53f685d5cb6421d9caac4b607a28a8fae459b7b404eefec13ddb"
+    },
+    {
+      "key": "sui:FzUf8HxE3yeT4dVxNEvrtAoK99WCvDJkFBivGrUjoDYp:EthYTxV1SnLdTRuc4VAhBJ8Q7Lg8AvTykmCzYMWhrTtw",
+      "rev": 1,
+      "supersedes": null,
+      "chain": "sui",
+      "contract": "0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a::balance_manager",
+      "wallet": "0xcde6dbe01902be1f200ff03dbbd149e586847be8cee15235f82750d9b06c0e04",
+      "error": "moveabort:order_info::assert_execution:5",
+      "error_detail": "Error in 2nd command, from '0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a::order_info::assert_execu",
+      "selector": "generate_proof_as_owner",
+      "failed_tx": "FzUf8HxE3yeT4dVxNEvrtAoK99WCvDJkFBivGrUjoDYp",
+      "success_tx": "EthYTxV1SnLdTRuc4VAhBJ8Q7Lg8AvTykmCzYMWhrTtw",
+      "success_block": 340170964,
+      "blocks_later": 3,
+      "next_failure": null,
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "retried ~1s after failing"
+        ]
+      },
+      "job_id": "dbe65e46-3bc6-4dfd-9047-2f1045bf05e9",
+      "blob_id": "nJi6CWt0FbRMKY_3So8cytMs9mC2yz4vaQnuPI8b_aw",
+      "namespace": "clew",
+      "written_at": "2026-10-31T15:20:52.590Z",
+      "diff": {
+        "gasUsed": {
+          "failed": 120420,
+          "success": 1121130
+        },
+        "gasLimit": {
+          "failed": 46259600,
+          "success": 56413200
+        },
+        "nonce": null,
+        "selector": null,
+        "argsChanged": 0,
+        "args": []
+      },
+      "next_action": "reason: Error in 2nd command, from '0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a::order_info::assert_execu (used 120420 of 46259600 gas, not out of gas); template tx EthYTxV1SnLdTRuc4VAhBJ8Q7Lg8AvTykmCzYMWhrTtw",
+      "text": "CLEW chain=sui contract=0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a::balance_manager wallet=0xcde6dbe01902be1f200ff03dbbd149e586847be8cee15235f82750d9b06c0e04 error=moveabort:order_info::assert_execution:5 selector=generate_proof_as_owner failed_tx=FzUf8HxE3yeT4dVxNEvrtAoK99WCvDJkFBivGrUjoDYp success_tx=EthYTxV1SnLdTRuc4VAhBJ8Q7Lg8AvTykmCzYMWhrTtw success_block=340170964. Contract 0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a::balance_manager on sui failed with error moveabort:order_info::assert_execution:5 (Error in 2nd command, from '0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a::order_info::assert_execu) for wallet 0xcde6dbe01902be1f200ff03dbbd149e586847be8cee15235f82750d9b06c0e04. Successful retry in tx EthYTxV1SnLdTRuc4VAhBJ8Q7Lg8AvTykmCzYMWhrTtw at block 340170964, 3 blocks later. Change: gas used was 1121130 vs 120420 on failure; gas limit 56413200 vs 46259600; gas price 120 vs 120 MIST; same 2 Move call(s); inputs 11 -> 11; inputs identical. NEXT_ACTION: reason: Error in 2nd command, from '0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a::order_info::assert_execu (used 120420 of 46259600 gas, not out of gas); template tx EthYTxV1SnLdTRuc4VAhBJ8Q7Lg8AvTykmCzYMWhrTtw"
+    },
+    {
+      "key": "sui:GXwW6feRx386m9W3z7UX9CRWAFNyuGETWPux6zZR48Vj:ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV",
+      "rev": 1,
+      "supersedes": null,
+      "chain": "sui",
+      "contract": "0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640::router",
+      "wallet": "0x2174cf795d0db2ab95226ee91eadbe7630170b98061d373eb01424a0f75f05ef",
+      "error": "moveabort:errors::err_amount_out_slippage_check_failed:1",
+      "error_detail": "Error in 4th command, from '0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640::errors::err_amount_out_s",
+      "selector": "new_swap_context",
+      "failed_tx": "GXwW6feRx386m9W3z7UX9CRWAFNyuGETWPux6zZR48Vj",
+      "success_tx": "ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV",
+      "success_block": 339166550,
+      "blocks_later": 441,
+      "next_failure": null,
+      "wallet_class": {
+        "label": "unclassified",
+        "reasons": [
+          "no account nonce on sui, so only retry latency was checked: retried ~106s after failing"
+        ]
+      },
+      "job_id": "88e69551-8a4b-4183-a1e3-7337aa82756f",
+      "blob_id": "qNi52wSgAQz8iz2XcTpgbbXQL4A0KS3Z3focMSu7eUs",
+      "namespace": "clew",
+      "written_at": "2026-10-31T16:45:29.479Z",
+      "diff": {
+        "gasUsed": {
+          "failed": 3411613,
+          "success": 17039613
+        },
+        "gasLimit": {
+          "failed": 6410000,
+          "success": 20038000
+        },
+        "nonce": null,
+        "selector": null,
+        "argsChanged": 0,
+        "args": []
+      },
+      "next_action": "reason: Error in 4th command, from '0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640::errors::err_amount_out_s (used 3411613 of 6410000 gas, not out of gas); template tx ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV",
+      "text": "CLEW chain=sui contract=0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640::router wallet=0x2174cf795d0db2ab95226ee91eadbe7630170b98061d373eb01424a0f75f05ef error=moveabort:errors::err_amount_out_slippage_check_failed:1 selector=new_swap_context failed_tx=GXwW6feRx386m9W3z7UX9CRWAFNyuGETWPux6zZR48Vj success_tx=ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV success_block=339166550. Contract 0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640::router on sui failed with error moveabort:errors::err_amount_out_slippage_check_failed:1 (Error in 4th command, from '0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640::errors::err_amount_out_s) for wallet 0x2174cf795d0db2ab95226ee91eadbe7630170b98061d373eb01424a0f75f05ef. Successful retry in tx ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV at block 339166550, 441 blocks later. Change: gas used was 17039613 vs 3411613 on failure; gas limit 20038000 vs 6410000; gas price 17038 vs 3410 MIST; same 3 Move call(s); inputs 14 -> 14; inputs identical. NEXT_ACTION: reason: Error in 4th command, from '0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640::errors::err_amount_out_s (used 3411613 of 6410000 gas, not out of gas); template tx ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV"
     }
   ],
   "recalls": [
@@ -798,7 +886,8 @@
         "change": "gas used was 176390 vs 192148 on failure; gas limit 276625 vs 246588; nonce 58508 -> 58509; same function 0x708909ad; calldata 4 arg word(s) changed (arg 4 0x4034297ede533478d4 -> 0x40345a5d65e9884189, arg 15 0x6ae0757700000000000000000000000000000000000000000000000000000000 -> 0x6ae0758300000000000000000000000000000000000000000000000000000000, arg 16 0x5a772e000000000000000000000000000000000000000000000004034297ede -> 0x5a772e0000000000000000000000000000000000000000000000040345a5d65)",
         "next_action": "re-encode calldata: arg word 4 = 0x40345a5d65e9884189 (was 0x4034297ede533478d4); arg word 15 = 0x6ae0758300000000000000000000000000000000000000000000000000000000 (was 0x6ae0757700000000000000000000000000000000000000000000000000000000); arg word 16 = 0x5a772e0000000000000000000000000000000000000000000000040345a5d65 (was 0x5a772e000000000000000000000000000000000000000000000004034297ede); +1 more words differ; rebuild params like tx 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03; bid gas price >= 9532143 wei (failed at 5916993); template tx 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03"
       },
-      "memory_key": "base:0x15f0e33c6bcaae91577346de3efac3680848b1158407ee77dbc6d743361ac153:0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03"
+      "memory_key": "base:0x15f0e33c6bcaae91577346de3efac3680848b1158407ee77dbc6d743361ac153:0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03",
+      "source": "npm run demo (Mainnet)"
     },
     {
       "chain": "base",
@@ -812,7 +901,8 @@
         "change": "gas used was 133536 vs 33234 on failure; gas limit 1150576 vs 1218812; nonce 106219 -> 106220; function 0x00000002 -> 0x00000011; calldata 18 arg word(s) changed (arg 0 0x23909cea00…fa2c4e -> 0x20, arg 1 0x29011c2d38…000000 -> 0x100212f43fd6ec, arg 2 0x6000000000…000000 -> 0x1)",
         "next_action": "call 0x00000011 instead of 0x00000002; template tx 0x82d2caf493467bf6c3e500237ecd35bc2631d96ca31d056df2709b6d9f458840"
       },
-      "memory_key": "base:0x987c3e003ef5d797cecf170f2e5a2342658ac27608728a404f9ce8c6d127abce:0x82d2caf493467bf6c3e500237ecd35bc2631d96ca31d056df2709b6d9f458840"
+      "memory_key": "base:0x987c3e003ef5d797cecf170f2e5a2342658ac27608728a404f9ce8c6d127abce:0x82d2caf493467bf6c3e500237ecd35bc2631d96ca31d056df2709b6d9f458840",
+      "source": "npm run demo (Mainnet)"
     },
     {
       "chain": "base",
@@ -826,7 +916,23 @@
         "change": "gas used was 438715 vs 34296 on failure; gas limit 1044916 vs 626972; nonce 1223472 -> 1223478; same function 0x00bbeac2; calldata 3 arg word(s) changed (arg 0 0x20009bd008…0aff5d -> 0x200000700c…ed1a7d, arg 1 0x1a042a5363…c5b402 -> 0xc6f7b508c0…6e56f8, arg 2 0x26b63a179f…0f404c -> 0xdf4a0f34fe…0f404c)",
         "next_action": "raise gas limit to >= 1044916 (failed with limit 626972, retry used 438715); re-encode calldata: arg word 0 = 0x200000700c…ed1a7d (was 0x20009bd008…0aff5d); arg word 1 = 0xc6f7b508c0…6e56f8 (was 0x1a042a5363…c5b402); arg word 2 = 0xdf4a0f34fe…0f404c (was 0x26b63a179f…0f404c); template tx 0x7821752b3a8dc12fdc8f429ada7ef44fb738ca2fec5582c114adfd8a60b362e8"
       },
-      "memory_key": "base:0x5d697a59e50a29e42c46f1355b8180406d5bbf260d271c11cdf69ee83c396ad1:0x7821752b3a8dc12fdc8f429ada7ef44fb738ca2fec5582c114adfd8a60b362e8"
+      "memory_key": "base:0x5d697a59e50a29e42c46f1355b8180406d5bbf260d271c11cdf69ee83c396ad1:0x7821752b3a8dc12fdc8f429ada7ef44fb738ca2fec5582c114adfd8a60b362e8",
+      "source": "npm run demo (Mainnet)"
+    },
+    {
+      "chain": "sui",
+      "failure_tx": "6mDBLQjL4Ld48683HjpZnV4xBQEZB5ymohxzxNaYxcvM",
+      "error": "moveabort:errors::err_amount_out_slippage_check_failed:1",
+      "without_memory": null,
+      "with_memory": {
+        "prior_success": "ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV",
+        "block": 339166550,
+        "blob_id": "qNi52wSgAQz8iz2XcTpgbbXQL4A0KS3Z3focMSu7eUs",
+        "change": "",
+        "next_action": "reason: Error in 4th command, from '0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640::errors::err_amount_out_s (used 3411613 of 6410000 gas, not out of gas); template tx ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV"
+      },
+      "memory_key": "sui:GXwW6feRx386m9W3z7UX9CRWAFNyuGETWPux6zZR48Vj:ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV",
+      "source": "npm run sui -- recall 6mDBLQjL4Ld48683HjpZnV4xBQEZB5ymohxzxNaYxcvM (2026-10-31)"
     }
   ],
   "counterfactual": {
