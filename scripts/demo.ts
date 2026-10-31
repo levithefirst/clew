@@ -31,12 +31,13 @@ log(`  memories written this run: ${written}, already on Walrus from earlier run
 // 4) A NEW failure, same wallet + contract + similar error -> recall changes the next action.
 log(`[4] NEXT FAILURE -> recall prior successful path`);
 const repeats = pairs.filter((p) => p.nextFailure);
-for (const p of repeats.slice(0, 3)) {
+for (const p of repeats) {
   const r = await onFailure(p.chain, p.nextFailure);
   const without = await onFailure(p.chain, p.nextFailure, { namespace: "clew-counterfactual-empty" });
   log(`  new failure ${p.chain} ${p.nextFailure}\n    error ${r.failure.errorSig}`);
   log(`    WITHOUT memory: ${without.matched ? "??" : without.message}`);
-  if (r.matched) log(`    WITH memory   : prior success ${r.priorPath.successTx} (block ${r.priorPath.successBlock}, blob ${r.memoryBlobId})\n                    change: ${r.priorPath.change}\n                    NEXT ACTION: ${r.suggestion}`);
+  // NEXT ACTION is the stored single line (parsed by web/scripts/build-data.mjs); the gated, readable form follows it.
+  if (r.matched) log(`    WITH memory   : prior success ${r.priorPath.successTx} (block ${r.priorPath.successBlock}, blob ${r.memoryBlobId})\n                    change: ${r.priorPath.change}\n                    NEXT ACTION: ${r.storedNextAction}\n${r.suggestion.replace(/^/gm, "                    | ")}`);
   else log(`    WITH memory   : no match (${r.message})`);
 }
 
