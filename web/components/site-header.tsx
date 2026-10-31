@@ -35,7 +35,7 @@ export function SiteHeader({ auth }: { auth: { google: boolean; github: boolean 
         className={cn("sticky top-0 z-50 w-full border-b bg-canvas transition-colors duration-200", (scrolled || open) && "border-line-strong")}
       >
         <div className="mx-auto flex h-14 w-full max-w-[72rem] items-center gap-8 px-5 sm:px-8 lg:px-12">
-          <a href="/#top" aria-label="Clew home" className="shrink-0 rounded-md">
+          <a href="/#top" aria-label="Clew home" className="flex shrink-0 items-center rounded-md">
             <Logo />
           </a>
           <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">

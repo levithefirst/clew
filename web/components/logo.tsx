@@ -22,12 +22,14 @@ export function Mark({ className, animated = false }: { className?: string; anim
           <stop offset="1" stopColor="var(--mark-hi)" />
         </linearGradient>
       </defs>
+      <g transform="translate(0 2.6)">
       <g stroke={`url(#${g})`}>
         <circle cx="12.5" cy="12.5" r="9.5" />
         <path d="M4.2 8.6C9.6 9.4 14.6 13.4 16.4 21.2" />
         <path d="M8.2 4C13.8 5.6 18.4 10 20 16.8" />
       </g>
       <path d="M19.2 18.6c1.6 5.4 4.6 9.2 10.6 8.4" stroke={`url(#${g}-t)`} pathLength={1} className={animated ? "thread-draw" : undefined} />
+      </g>
     </svg>
   );
 }
@@ -36,7 +38,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5 text-ink", className)}>
       <Mark className="size-[26px]" />
-      <span className="text-[1.0625rem] font-[620] tracking-[-0.02em]">clew</span>
+      <span className="text-[1.0625rem] font-[620] leading-none tracking-[-0.02em]">clew</span>
     </span>
   );
 }
