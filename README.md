@@ -48,6 +48,7 @@ Supported chains (Tatum gateways): `ethereum`, `base`, `polygon`, `arbitrum`, `o
 ```bash
 npm test                                   # offline: mocked RPC + in-memory store (decode, error sig, diff, loop)
 npm run demo                               # full Mainnet loop -> demo-output.txt (idempotent)
+npm run watch -- base [--store ledger]     # live: new failures from remembered wallet+contract pairs -> recall
 npm run check -- base <failedTxHash>       # step 4 for any failure: prior path + next action, or generic
                                            #   --without-memory (empty namespace), --json (raw result)
 npm run record -- base <failedTx> [okTx]   # steps 1-3: watch for the retry if okTx is omitted, then write memory
@@ -71,6 +72,35 @@ Exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](
 - `scripts/discover.ts` scanned recent blocks with Tatum `eth_getBlockReceipts` on Base (151 blocks), Ethereum (41), and Polygon (101), looking for real `fail → later success` sequences from the same wallet to the same contract. `scripts/pick.ts` then chose 12 pairs on distinct contracts (8 Base, 2 Ethereum, 2 Polygon). That pick predates the wallet classifier; the tags were added afterwards from the same data. 9 of those wallets failed **again** later with a similar error, so step 4 runs on real repeat failures. Candidate lists and picks are in `fixtures/`.
 - **12 Walrus Mainnet memories**, all from real pairs. Each write was confirmed by `waitForRememberJob` (`blob_id` recorded in `memories.json`).
 - Honest caveat: most wallets that fail and retry within minutes on-chain are bots (swap routers, MEV, relayers), so many of the "changes" are fresh quotes, deadlines, or a higher gas price. Clew reports exactly what differed. It doesn't claim to know why.
+
+## Watcher
+
+`npm run watch -- <chain>` turns Clew from replayed history into live catches. It polls Tatum for every new block, keeps the failed receipts whose wallet and contract already have a memory, runs recall on each, and prints the prior successful path.
+
+```bash
+npm run watch -- base                      # from the current head; Ctrl-C to stop, rerun to resume
+npm run watch -- base --store ledger       # recall from memories.json: needs only TATUM_API_KEY
+npm run watch -- base --from 53160000 --blocks 300 --verbose
+npm run watch -- base --record fixtures/watch-recorded.json   # capture the RPC traffic for replay tests
+```
+
+- **Rate limit:** one header plus one `eth_getBlockReceipts` call per block (about 1 request per second on Base). All calls go through the 360 ms throttle, and a 429 backs off and retries.
+- **Resume:** the cursor (`.clew/watch-<chain>.json`, git-ignored) is saved after every block, so a restart continues where it stopped.
+- **Reorgs:** the watcher keeps the last 12 block hashes. If a new block's parent hash doesn't match, it rewinds one block and rescans. A failure that appears again on the new chain is not reported twice.
+- **Output** (stable, one block per event):
+  ```
+  WATCH base from block <n> (new cursor .clew/watch-base.json), <k> wallet+contract pairs with memories, store walrus
+  FAILURE base block <n> tx <hash>
+    wallet <addr> -> contract <addr>
+    error <signature> (<detail>)
+    WITH MEMORY prior success <hash> (block <n>, blob <id>)
+    NEXT ACTION
+      ...
+  REORG at block <n>: parent hash changed, rewound to <n-1>
+  ```
+- **Tests:** `tests/watch.test.ts` replays `fixtures/watch-stream.json` (hand-built, marked synthetic) through the same code. It covers a reorg, a watched failure next to an unwatched one, recall, and resume.
+
+No live catch has been recorded yet. The watcher only reports failures from the 12 remembered wallet+contract pairs, so a catch needs one of those wallets to fail again while it runs.
 
 ## Wallet classifier
 

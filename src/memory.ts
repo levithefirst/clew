@@ -51,3 +51,13 @@ export const walrus: MemoryStore = {
     return r.results.map((x) => ({ text: x.text, blob_id: x.blob_id, distance: x.distance }));
   },
 };
+
+/**
+ * Recall from the local ledger instead of Walrus: every memory Clew wrote, unranked. The caller's strict tag filter
+ * (chain + contract + wallet + similar error) does the matching. For runs without MEMWAL keys and for tests; it never
+ * writes, because a memory only counts once Walrus confirms it.
+ */
+export const ledgerStore: MemoryStore = {
+  async remember() { throw new Error("ledger store is read-only: write memories through Walrus"); },
+  async recall() { return Object.values(readLedger()).map((m) => ({ text: m.text, blob_id: m.blob_id, distance: 0 })); },
+};

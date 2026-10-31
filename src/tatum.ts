@@ -10,6 +10,7 @@ export const GATEWAYS: Record<string, string> = {
 
 // Free Tatum plan = 3 req/s. Serialize calls with a small gap and retry on 429.
 const MIN_GAP_MS = Number(process.env.TATUM_MIN_GAP_MS ?? 360);
+const BACKOFF_MS = Number(process.env.TATUM_BACKOFF_MS ?? 1000); // 429: wait BACKOFF_MS x attempt, up to 6 attempts
 let last = 0;
 let queue: Promise<unknown> = Promise.resolve();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -20,11 +21,15 @@ export class RpcError extends Error {
 
 type Fetcher = (chain: string, method: string, params: unknown[]) => Promise<any>;
 let override: Fetcher | null = null;
-/** Tests inject a mock RPC here. */
+/** Tests inject a mock RPC here; recorders wrap `tatumRpc`. */
 export function setRpc(f: Fetcher | null) { override = f; }
 
 export async function rpc(chain: string, method: string, params: unknown[] = []): Promise<any> {
-  if (override) return override(chain, method, params);
+  return override ? override(chain, method, params) : tatumRpc(chain, method, params);
+}
+
+/** The real gateway call: throttled to the free plan's 3 req/s, with backoff on 429. */
+export async function tatumRpc(chain: string, method: string, params: unknown[] = []): Promise<any> {
   const url = GATEWAYS[chain];
   if (!url) throw new Error(`unsupported chain ${chain}`);
   const key = process.env.TATUM_API_KEY;
@@ -40,7 +45,7 @@ export async function rpc(chain: string, method: string, params: unknown[] = [])
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
       });
       const body: any = await res.json().catch(() => ({}));
-      if (res.status === 429 || body?.statusCode === 429) { await sleep(1000 * (attempt + 1)); continue; }
+      if (res.status === 429 || body?.statusCode === 429) { await sleep(BACKOFF_MS * (attempt + 1)); continue; }
       if (body.error) throw new RpcError(body.error.message, body.error.code, body.error.data);
       if (!res.ok) throw new RpcError(`HTTP ${res.status}`);
       return body.result;

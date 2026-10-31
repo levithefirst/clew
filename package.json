@@ -10,7 +10,8 @@
     "discover": "tsx scripts/discover.ts",
     "typecheck": "tsc -p .",
     "classify": "tsx scripts/classify.ts",
-    "pick": "tsx scripts/pick.ts"
+    "pick": "tsx scripts/pick.ts",
+    "watch": "tsx scripts/watch.ts"
   },
   "keywords": [],
   "author": "",

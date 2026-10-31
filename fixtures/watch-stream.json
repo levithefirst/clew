@@ -1,0 +1,227 @@
+{
+ "_synthetic": "Hand-built fixture in the shape of Tatum JSON-RPC responses (fake addresses and hashes, not chain data). It exercises the watcher: an unrelated block, a watched failure next to an unwatched one, a reorg at block 103 that replaces block 102, and a resume at 104. A capture from `npm run watch -- <chain> --record FILE` replays the same way.",
+ "chain": "base",
+ "calls": [
+  {
+   "method": "eth_blockNumber",
+   "params": [],
+   "result": "0x67"
+  },
+  {
+   "method": "eth_getBlockByNumber",
+   "params": [
+    "0x64",
+    false
+   ],
+   "result": {
+    "number": "0x64",
+    "hash": "0x1010101010101010101010101010101010101010101010101010101010101010",
+    "parentHash": "0x9999999999999999999999999999999999999999999999999999999999999999",
+    "timestamp": "0x6b49d2c8"
+   }
+  },
+  {
+   "method": "eth_getBlockReceipts",
+   "params": [
+    "0x64"
+   ],
+   "result": [
+    {
+     "transactionHash": "0x0101010101010101010101010101010101010101010101010101010101010101",
+     "from": "0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+     "to": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+     "status": "0x1",
+     "gasUsed": "0x2ee0",
+     "blockNumber": "0x64",
+     "blockHash": "0x0",
+     "effectiveGasPrice": "0x5a4c0"
+    }
+   ]
+  },
+  {
+   "method": "eth_getBlockByNumber",
+   "params": [
+    "0x65",
+    false
+   ],
+   "result": {
+    "number": "0x65",
+    "hash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "parentHash": "0x1010101010101010101010101010101010101010101010101010101010101010",
+    "timestamp": "0x6b49d2ca"
+   }
+  },
+  {
+   "method": "eth_getBlockReceipts",
+   "params": [
+    "0x65"
+   ],
+   "result": [
+    {
+     "transactionHash": "0xf1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+     "from": "0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+     "to": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+     "status": "0x0",
+     "gasUsed": "0x2ee0",
+     "blockNumber": "0x65",
+     "blockHash": "0x0",
+     "effectiveGasPrice": "0x5a4c0"
+    },
+    {
+     "transactionHash": "0xf2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2",
+     "from": "0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+     "to": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+     "status": "0x0",
+     "gasUsed": "0x2ee0",
+     "blockNumber": "0x65",
+     "blockHash": "0x0",
+     "effectiveGasPrice": "0x5a4c0"
+    }
+   ]
+  },
+  {
+   "method": "eth_getBlockByNumber",
+   "params": [
+    "0x66",
+    false
+   ],
+   "result": {
+    "number": "0x66",
+    "hash": "0x2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a",
+    "parentHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "timestamp": "0x6b49d2cc"
+   }
+  },
+  {
+   "method": "eth_getBlockReceipts",
+   "params": [
+    "0x66"
+   ],
+   "result": []
+  },
+  {
+   "method": "eth_getBlockByNumber",
+   "params": [
+    "0x67",
+    false
+   ],
+   "result": {
+    "number": "0x67",
+    "hash": "0x1313131313131313131313131313131313131313131313131313131313131313",
+    "parentHash": "0x1212121212121212121212121212121212121212121212121212121212121212",
+    "timestamp": "0x6b49d2ce"
+   }
+  },
+  {
+   "method": "eth_getBlockByNumber",
+   "params": [
+    "0x66",
+    false
+   ],
+   "result": {
+    "number": "0x66",
+    "hash": "0x1212121212121212121212121212121212121212121212121212121212121212",
+    "parentHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "timestamp": "0x6b49d2cc"
+   }
+  },
+  {
+   "method": "eth_getBlockReceipts",
+   "params": [
+    "0x66"
+   ],
+   "result": []
+  },
+  {
+   "method": "eth_getBlockReceipts",
+   "params": [
+    "0x67"
+   ],
+   "result": []
+  },
+  {
+   "method": "eth_getTransactionReceipt",
+   "params": [
+    "0xf1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1"
+   ],
+   "result": {
+    "transactionHash": "0xf1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+    "from": "0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "to": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+    "status": "0x0",
+    "gasUsed": "0x2ee0",
+    "blockNumber": "0x65",
+    "blockHash": "0x0",
+    "effectiveGasPrice": "0x5a4c0"
+   }
+  },
+  {
+   "method": "eth_getTransactionByHash",
+   "params": [
+    "0xf1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1"
+   ],
+   "result": {
+    "from": "0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+    "to": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+    "input": "0x38ed173900000000000000000000000000000000000000000000000000000000000003e800000000000000000000000000000000000000000000000000000000000003de",
+    "gas": "0x30d40",
+    "nonce": "0x9",
+    "value": "0x0",
+    "blockNumber": "0x65",
+    "gasPrice": "0x5a4c0"
+   }
+  },
+  {
+   "method": "debug_traceTransaction",
+   "params": [
+    "0xf1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+    {
+     "tracer": "callTracer",
+     "tracerConfig": {
+      "onlyTopCall": true
+     }
+    }
+   ],
+   "result": {
+    "output": "0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000013546f6f206c6974746c6520726563656976656400000000000000000000000000",
+    "error": "execution reverted"
+   }
+  },
+  {
+   "method": "eth_blockNumber",
+   "params": [],
+   "result": "0x68"
+  },
+  {
+   "method": "eth_getBlockByNumber",
+   "params": [
+    "0x68",
+    false
+   ],
+   "result": {
+    "number": "0x68",
+    "hash": "0x1414141414141414141414141414141414141414141414141414141414141414",
+    "parentHash": "0x1313131313131313131313131313131313131313131313131313131313131313",
+    "timestamp": "0x6b49d2d0"
+   }
+  },
+  {
+   "method": "eth_getBlockReceipts",
+   "params": [
+    "0x68"
+   ],
+   "result": [
+    {
+     "transactionHash": "0xf3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3",
+     "from": "0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+     "to": "0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+     "status": "0x0",
+     "gasUsed": "0x2ee0",
+     "blockNumber": "0x68",
+     "blockHash": "0x0",
+     "effectiveGasPrice": "0x5a4c0"
+    }
+   ]
+  }
+ ]
+}
