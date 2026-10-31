@@ -1,6 +1,7 @@
 import { Reveal } from "@/components/reveal";
 import { Hash } from "@/components/hash";
 import { NextAction } from "@/components/next-action";
+import { WalletTag } from "@/components/wallet-tag";
 import { HERO, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, nextActionOf } from "@/lib/data";
 import { short } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function SideBySide() {
           </span>
           <span className="flex items-center gap-1.5">
             wallet <Hash value={memory.wallet} href={addrUrl(recall.chain, memory.wallet)} label="wallet" linkLabel={exp} />
+            <WalletTag cls={memory.wallet_class} />
           </span>
           <span className="rounded-md bg-fail-soft px-2 py-0.5 font-mono text-label text-fail">{memory.error_detail}</span>
         </Reveal>

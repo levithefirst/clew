@@ -5,6 +5,7 @@ import { Hash } from "@/components/hash";
 import { DATA, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, nextActionOf, type Memory } from "@/lib/data";
 import { clip } from "@/lib/advice";
 import { NextAction } from "@/components/next-action";
+import { WalletTag } from "@/components/wallet-tag";
 import { cn, fmt, short } from "@/lib/utils";
 
 const RECALLED = new Map(DATA.recalls.map((r) => [r.memory_key, r]));
@@ -64,7 +65,10 @@ export function Example() {
                   <span className="font-mono text-ink-4">{short(x.contract, 6, 4)}</span>
                   {r && <span className="ml-auto rounded-full bg-brand-soft px-1.5 py-px text-[0.6875rem] font-[560] text-brand">recalled</span>}
                 </span>
-                <span className={cn("truncate text-small", on ? "text-ink" : "text-ink-2")}>{errLabel(x)}</span>
+                <span className="flex items-center gap-2">
+                  <span className={cn("min-w-0 truncate text-small", on ? "text-ink" : "text-ink-2")}>{errLabel(x)}</span>
+                  {x.wallet_class.label === "human-like" && <WalletTag cls={x.wallet_class} className="ml-auto shrink-0" />}
+                </span>
               </button>
             );
           })}
@@ -80,10 +84,14 @@ export function Example() {
           </span>
           <span className="flex items-center gap-1.5 text-small text-ink-4">
             wallet <Hash value={m.wallet} href={addrUrl(m.chain, m.wallet)} label="wallet" linkLabel={exp} />
+            <WalletTag cls={m.wallet_class} />
           </span>
         </header>
 
         <div className="px-5 py-6 sm:px-7">
+          <p className="mb-5 text-label text-ink-4">
+            Wallet looks {m.wallet_class.label} (heuristic): {m.wallet_class.reasons.join("; ")}.
+          </p>
           <p className="eyebrow">Error</p>
           <p className="mt-2 break-words font-mono text-body-sm text-fail">{m.error_detail ?? m.error}</p>
           <p className="mt-1 break-all font-mono text-label text-ink-4">signature {m.error}</p>

@@ -8,6 +8,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const memories = JSON.parse(readFileSync(join(root, "memories.json"), "utf8"));
 const pairs = JSON.parse(readFileSync(join(root, "fixtures", "pairs.json"), "utf8"));
 const demo = readFileSync(join(root, "demo-output.txt"), "utf8");
+const classes = JSON.parse(readFileSync(join(root, "fixtures", "wallet-classes.json"), "utf8"));
 
 // Display copy only: early runs joined clauses with " \u2014 "; the core now prints ". Check ..." and "; ".
 // Memory `text` stays verbatim as stored on Walrus.
@@ -59,6 +60,7 @@ const out = Object.entries(memories).filter(([key]) => !superseded.has(key)).map
     success_block: num(kv(t, "success_block")),
     blocks_later: num(t.match(/, (\d+) blocks? later/)?.[1]),
     next_failure: pair.nextFailure ?? null,
+    wallet_class: classes[key] ? { label: classes[key].label, reasons: classes[key].reasons } : null,
     job_id: m.job_id,
     blob_id: m.blob_id,
     namespace: m.namespace,
@@ -90,10 +92,15 @@ const stats = {
   per_chain: Object.fromEntries(chains.map((c) => [c, out.filter((o) => o.chain === c).length])),
   distinct_contracts: new Set(out.map((o) => `${o.chain}:${o.contract}`)).size,
   recalls: recalls.length,
+  human_like: out.filter((o) => o.wallet_class?.label === "human-like").length,
   namespace: [...new Set(out.map((o) => o.namespace))].join(","),
   relayer: "https://relayer.memory.walrus.xyz",
 };
 
 for (const r of recalls) if (!r.memory_key) throw new Error(`recall ${r.failure_tx} has no matching memory`);
-writeFileSync(join(root, "web", "data", "clew.json"), JSON.stringify({ generated_from: ["memories.json", "demo-output.txt", "fixtures/pairs.json"], stats, memories: out, recalls, counterfactual }, null, 2) + "\n");
+for (const o of out) if (!o.wallet_class) throw new Error(`${o.key} has no wallet class: run npm run classify`);
+// Headline preference: human-like wallets first (stable otherwise). The site's hero uses recalls[0].
+const isHuman = (key) => classes[key]?.label === "human-like";
+recalls.sort((a, b) => Number(isHuman(b.memory_key)) - Number(isHuman(a.memory_key)));
+writeFileSync(join(root, "web", "data", "clew.json"), JSON.stringify({ generated_from: ["memories.json", "demo-output.txt", "fixtures/pairs.json", "fixtures/wallet-classes.json"], stats, memories: out, recalls, counterfactual }, null, 2) + "\n");
 console.log(stats, recalls.length, !!counterfactual);

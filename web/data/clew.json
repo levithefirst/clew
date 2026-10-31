@@ -2,7 +2,8 @@
   "generated_from": [
     "memories.json",
     "demo-output.txt",
-    "fixtures/pairs.json"
+    "fixtures/pairs.json",
+    "fixtures/wallet-classes.json"
   ],
   "stats": {
     "memories": 12,
@@ -19,6 +20,7 @@
     },
     "distinct_contracts": 12,
     "recalls": 3,
+    "human_like": 1,
     "namespace": "clew",
     "relayer": "https://relayer.memory.walrus.xyz"
   },
@@ -38,6 +40,13 @@
       "success_block": 53152834,
       "blocks_later": 6,
       "next_failure": "0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6",
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "58,508 prior transactions",
+          "32 calls to this contract in ~5 min (6 failed)"
+        ]
+      },
       "job_id": "fcf6675d-52bf-42d7-bc62-ab46816b7cc5",
       "blob_id": "B57Lqac7DaDkXiXwNGHJML0S5Fo1EGOm9CMHmcOJOQc",
       "namespace": "clew",
@@ -96,6 +105,13 @@
       "success_block": 53152822,
       "blocks_later": 5,
       "next_failure": "0x9539b67dbf137f4972cf79c81faa659d80f2d828da7e8822c765678fbedbd7db",
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "106,219 prior transactions",
+          "22 calls to this contract in ~5 min (10 failed)"
+        ]
+      },
       "job_id": "3f25adc2-31d0-464b-9903-e998db9c0c4a",
       "blob_id": "MfcU5wMOZ0MgEoaz_9DqLqonOOoYiKvN0LIa0uMaCz4",
       "namespace": "clew",
@@ -154,6 +170,13 @@
       "success_block": 53152887,
       "blocks_later": 70,
       "next_failure": "0xfefcabcc9badbf4439e6877cb4cc5304b9bb6191eb0eb01913d595cba6b5554a",
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "1,223,472 prior transactions",
+          "12 calls to this contract in ~5 min (11 failed)"
+        ]
+      },
       "job_id": "01a603b4-9831-4e67-abe2-1f405cb78127",
       "blob_id": "YMZkkRkB9DfAUmjaQaA9hfpD8HEqjbZvIjwrk_Qyt7c",
       "namespace": "clew",
@@ -212,6 +235,14 @@
       "success_block": 53152848,
       "blocks_later": 9,
       "next_failure": "0xb7ffb882c1b50d45c2ac44d97d35021c0629e0444f13bbb2db44230a80e56ab5",
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "576,565 prior transactions",
+          "5 other transactions between failure and retry",
+          "28 calls to this contract in ~5 min (18 failed)"
+        ]
+      },
       "job_id": "bf7bc40f-bdcd-4556-b722-75712fda64ab",
       "blob_id": "v1skwz4w5QL7LDoJCXVozKmcXESxzMJJQhKj_1EBMi0",
       "namespace": "clew",
@@ -270,6 +301,14 @@
       "success_block": 53152835,
       "blocks_later": 2,
       "next_failure": null,
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "2,792,958 prior transactions",
+          "retried ~4s after failing",
+          "55 calls to this contract in ~5 min (21 failed)"
+        ]
+      },
       "job_id": "a47c84ca-5169-4437-bf2b-19fedcfb9ba1",
       "blob_id": "gmI3PPgWwL9wxrUdSDOQAPPxJH9hnS_H1i-HCa2i6VY",
       "namespace": "clew",
@@ -318,6 +357,12 @@
       "success_block": 53152833,
       "blocks_later": 10,
       "next_failure": null,
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "18 calls to this contract in ~5 min (8 failed)"
+        ]
+      },
       "job_id": "8d20a63b-f82a-4dd8-8806-9a57aa0cf436",
       "blob_id": "loKGfUh6UzaJmiFkR06APcEe9vU79LUigI2lhGZSFXc",
       "namespace": "clew",
@@ -376,6 +421,12 @@
       "success_block": 53152899,
       "blocks_later": 60,
       "next_failure": "0x44bf3cb3a30be82d3e3fff00db3685fa9ebf31f7a31e5517096a01e70231a76a",
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "8 calls to this contract in ~5 min (5 failed)"
+        ]
+      },
       "job_id": "aa3e3682-0791-478b-b530-4b37dc7d3af9",
       "blob_id": "BGe79q2swCtCknn4wYtyc0N4N42WzE6j4PbmTlp5tM0",
       "namespace": "clew",
@@ -434,6 +485,14 @@
       "success_block": 53152839,
       "blocks_later": 17,
       "next_failure": "0x751bb82073a77b1032c3c1dd795e50a53e48f81b701f4b50d8ce019ea52bb0ce",
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "305,575 prior transactions",
+          "9 other transactions between failure and retry",
+          "41 calls to this contract in ~5 min (29 failed)"
+        ]
+      },
       "job_id": "e6d1237b-5038-4163-a0cb-644476a344ba",
       "blob_id": "6SrxHukkT2XPTyMLR7z7GKOluJc7tjpiHB8cBh6l8mM",
       "namespace": "clew",
@@ -492,6 +551,13 @@
       "success_block": 26283290,
       "blocks_later": 3,
       "next_failure": "0x5bb09be582ee998a31d503ce72914cd3c09fd48b0d14a91b82d04425892a6197",
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "52,750 prior transactions",
+          "11 calls to this contract in ~8 min (6 failed)"
+        ]
+      },
       "job_id": "b77a29c5-8f3d-4107-85b2-a1c4c3e8d63e",
       "blob_id": "a-q2tSGDwBkQfc3kDR53v1zifOKvFAlH-WeGooY5Sd4",
       "namespace": "clew",
@@ -550,6 +616,12 @@
       "success_block": 26283279,
       "blocks_later": 4,
       "next_failure": "0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade",
+      "wallet_class": {
+        "label": "human-like",
+        "reasons": [
+          "no automation signal: 65 prior transactions, retried ~48s after failing, 4 calls to this contract in ~8 min"
+        ]
+      },
       "job_id": "29837ae2-09bb-4d68-89ae-fa6f8e220d54",
       "blob_id": "7YJ-W7r8MebwQr51bJB_g2p7TUJNNSzPXJhjIThjKG4",
       "namespace": "clew",
@@ -598,6 +670,12 @@
       "success_block": 96259910,
       "blocks_later": 11,
       "next_failure": "0xe8f968a04eddddd345a5974cdddc78e5d388a6c54b2d523441d6347ce44cdf9f",
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "50,162 prior transactions"
+        ]
+      },
       "job_id": "9a2cd164-2555-4f2b-b764-6633769bc4d7",
       "blob_id": "1-NUU8sqBTLiHJoDTMFpRxHfKPPkgDemJNqsUSDlWsw",
       "namespace": "clew",
@@ -656,6 +734,13 @@
       "success_block": 96259983,
       "blocks_later": 9,
       "next_failure": null,
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "1,800,462 prior transactions",
+          "6 calls to this contract in ~3 min (1 failed)"
+        ]
+      },
       "job_id": "6544eef4-a2c6-4e6d-b658-312190be22d9",
       "blob_id": "CeHUuM1PqEh54q66YavNEkqlMlaAZSzLScHgjeJF4Q8",
       "namespace": "clew",

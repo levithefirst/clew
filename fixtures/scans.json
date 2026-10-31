@@ -1,0 +1,6 @@
+{
+  "_note": "Blocks scanned by scripts/discover.ts per chain for the candidates written before discovery recorded scanBlocks per candidate (see README). Used as the window for the repeat-call signal.",
+  "base": 151,
+  "ethereum": 41,
+  "polygon": 101
+}

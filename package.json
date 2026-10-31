@@ -8,7 +8,9 @@
     "check": "tsx scripts/check.ts",
     "record": "tsx scripts/record.ts",
     "discover": "tsx scripts/discover.ts",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "classify": "tsx scripts/classify.ts",
+    "pick": "tsx scripts/pick.ts"
   },
   "keywords": [],
   "author": "",

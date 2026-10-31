@@ -52,7 +52,9 @@ npm run check -- base <failedTxHash>       # step 4 for any failure: prior path 
                                            #   --without-memory (empty namespace), --json (raw result)
 npm run record -- base <failedTx> [okTx]   # steps 1-3: watch for the retry if okTx is omitted, then write memory
                                            #   --dry-run (print the memory text, write nothing), --rev N (corrected rewrite)
-npm run discover -- base 150 300           # find real fail->success candidates (scan 150 blocks, 300-block window)
+npm run discover -- base 150 300 [--to N]  # find real fail->success candidates (scan 150 blocks ending at N, 300-block retry window); merges into fixtures/
+npm run pick -- base=8 ethereum=2          # choose pairs: human-like wallets first, then real repeat failures (fixtures/pairs.json)
+npm run classify                           # offline: tag each memory's wallet bot-like / human-like (fixtures/wallet-classes.json)
 ```
 
 ## Two-minute demo
@@ -66,9 +68,24 @@ Exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](
 
 ## What the demo used (all real Mainnet data, no fixtures)
 
-- `scripts/discover.ts` scanned recent blocks with Tatum `eth_getBlockReceipts` on Base (151 blocks), Ethereum (41), and Polygon (101), looking for real `fail → later success` sequences from the same wallet to the same contract. `scripts/pick.ts` then chose 12 pairs on distinct contracts (8 Base, 2 Ethereum, 2 Polygon). 9 of those wallets failed **again** later with a similar error, so step 4 runs on real repeat failures. Candidate lists and picks are in `fixtures/`.
+- `scripts/discover.ts` scanned recent blocks with Tatum `eth_getBlockReceipts` on Base (151 blocks), Ethereum (41), and Polygon (101), looking for real `fail → later success` sequences from the same wallet to the same contract. `scripts/pick.ts` then chose 12 pairs on distinct contracts (8 Base, 2 Ethereum, 2 Polygon). That pick predates the wallet classifier; the tags were added afterwards from the same data. 9 of those wallets failed **again** later with a similar error, so step 4 runs on real repeat failures. Candidate lists and picks are in `fixtures/`.
 - **12 Walrus Mainnet memories**, all from real pairs. Each write was confirmed by `waitForRememberJob` (`blob_id` recorded in `memories.json`).
 - Honest caveat: most wallets that fail and retry within minutes on-chain are bots (swap routers, MEV, relayers), so many of the "changes" are fresh quotes, deadlines, or a higher gas price. Clew reports exactly what differed. It doesn't claim to know why.
+
+## Wallet classifier
+
+Most wallets that fail and retry within minutes are bots, so Clew labels each one with a transparent heuristic (`src/classify.ts`). Any one signal makes a wallet **bot-like**:
+
+| Signal | Threshold |
+|---|---|
+| Lifetime nonce (transactions sent before the failure) | >= 10,000 |
+| Retry latency | <= 6 s |
+| Other transactions between failure and retry | >= 3 within 60 s |
+| Calls to the same contract in the discovery scan window | >= 5, at >= 30 per hour |
+
+No signal makes it **human-like**, which only means no automation signal was seen. It never means "a person": a slow, low-volume bot passes, and a power user running a script fails. Latency comes from block timestamps when the transactions are loaded live (`pick`), or from block count times average block time when only the memory text is available (`classify`, marked `~`). The repeat-call signal needs discovery data; the scan size per chain for the original candidates is in `fixtures/scans.json`.
+
+Current tags for the 12 memories (`npm run classify`): 11 bot-like, 1 human-like (Ethereum `0xd55c…`, `Expired`: 65 prior transactions, retried about 48 s later, 4 calls in about 8 minutes). `pick` ranks human-like wallets with a real repeat failure first, so the headline example comes from a human-like wallet when one is available.
 
 ## Limits
 

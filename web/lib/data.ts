@@ -33,6 +33,10 @@ export interface Memory {
   };
   next_action: string | null;
   text: string;
+  /** Heuristic from src/classify.ts. "human-like" means no automation signal was seen, not a verified person. */
+  wallet_class: { label: "bot-like" | "human-like"; reasons: string[] };
+  rev: number;
+  supersedes: string | null;
 }
 export interface Recall {
   chain: Chain;
@@ -51,6 +55,7 @@ export const DATA = raw as unknown as {
     per_chain: Record<Chain, number>;
     distinct_contracts: number;
     recalls: number;
+    human_like: number;
     namespace: string;
     relayer: string;
   };
@@ -72,7 +77,7 @@ export const addrUrl = (c: Chain, a: string) => `${EXPLORER[c]}/address/${a}`;
 /** Walruscan Mainnet blob page. Clew memories are SEAL-encrypted: the page proves the blob exists, not its text. */
 export const blobUrl = (id: string) => `https://walruscan.com/mainnet/blob/${id}`;
 
-/** The headline example: first demo recall (Base, "Too little received"). */
+/** The headline example: the first demo recall (build-data puts human-like wallets first). */
 export const HERO = (() => {
   const r = DATA.recalls[0];
   const m = DATA.memories.find((x) => x.key === r.memory_key)!;
