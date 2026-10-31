@@ -40,6 +40,7 @@ cp .env.example .env   # fill in, then: set -a; . ./.env; set +a
 | `MEMWAL_KEY` | Walrus Memory delegate private key (hex) |
 | `MEMWAL_ACCOUNT_ID` | Walrus Memory account id |
 | `TATUM_API_KEY` | Tatum API key (the free plan works; Clew throttles itself to ~3 req/s) |
+| `DEMO_PRIVATE_KEY` | optional, `npm run live-demo` only: a throwaway Base burner key (see Live demo) |
 
 Supported chains (Tatum gateways): `ethereum`, `base`, `polygon`, `arbitrum`, `optimism`, `bsc`.
 
@@ -53,6 +54,7 @@ npm run check -- base <failedTxHash>       # step 4 for any failure: prior path 
                                            #   --without-memory (empty namespace), --json (raw result)
 npm run record -- base <failedTx> [okTx]   # steps 1-3: watch for the retry if okTx is omitted, then write memory
                                            #   --dry-run (print the memory text, write nothing), --rev N (corrected rewrite)
+npm run live-demo [-- --dry-run --address 0x..]  # Base: failure, retry, memory, next failure answered by recall (burner key)
 npm run discover -- base 150 300 [--to N]  # find real fail->success candidates (scan 150 blocks ending at N, 300-block retry window); merges into fixtures/
 npm run pick -- base=8 ethereum=2          # choose pairs: human-like wallets first, then real repeat failures (fixtures/pairs.json)
 npm run classify                           # offline: tag each memory's wallet bot-like / human-like (fixtures/wallet-classes.json)
@@ -101,6 +103,45 @@ npm run watch -- base --record fixtures/watch-recorded.json   # capture the RPC 
 - **Tests:** `tests/watch.test.ts` replays `fixtures/watch-stream.json` (hand-built, marked synthetic) through the same code. It covers a reorg, a watched failure next to an unwatched one, recall, and resume.
 
 No live catch has been recorded yet. The watcher only reports failures from the 12 remembered wallet+contract pairs, so a catch needs one of those wallets to fail again while it runs.
+
+## Live demo
+
+`npm run live-demo` produces a fresh, guaranteed example on Base Mainnet instead of relying on someone else's history. It uses Base's canonical WETH (`0x4200000000000000000000000000000000000006`, the WETH9 predeploy), whose `withdraw(wad)` reverts when `wad` exceeds the caller's balance:
+
+| Step | Transaction | Expected |
+|---|---|---|
+| setup (only if WETH balance < 1 gwei) | `deposit()` with 1 gwei of ETH | success |
+| failure | `withdraw(balance + 1 gwei)` | revert |
+| retry | `withdraw(1 gwei)` | success |
+| memory | diff the pair, write to Walrus (`remember` + `waitForRememberJob`) | stored |
+| next failure | `withdraw(balance + 2 gwei)` | revert, then recall without and with memory |
+
+Recall should answer the second failure with "re-encode calldata: arg word 0 = 0x3b9aca00" (1 gwei) and the retry as the template tx. The run stops at the first transaction whose status isn't the expected one. Every call goes through Tatum (`eth_sendRawTransaction`, receipts, traces).
+
+**Safe setup**
+1. Create a new throwaway key used for nothing else (for example `cast wallet new`, or `node -e "console.log(require('viem/accounts').generatePrivateKey())"`). Never use a wallet that holds real funds.
+2. Send it a few cents of ETH on Base. Each run sends 3 or 4 transactions of 25k to 45k gas. The script refuses to start if the maximum L2 fee for the run exceeds 0.0003 ETH, and Base adds a small L1 data fee per transaction.
+3. Put the key in `.env` as `DEMO_PRIVATE_KEY` (`.env` is git-ignored). It is read from the environment, used only to sign, and never printed or logged; output shows the derived address only.
+
+```bash
+npm run live-demo -- --dry-run --address 0xYourBurner   # eth_call simulation of every step, prints what would be sent; sends nothing
+npm run live-demo                                       # real run: needs DEMO_PRIVATE_KEY, TATUM_API_KEY, MEMWAL_KEY, MEMWAL_ACCOUNT_ID
+```
+
+Output format (real run):
+```
+LIVE DEMO base wallet <address> (key from DEMO_PRIVATE_KEY, not shown): <wei> wei ETH, <wei> wei WETH
+[setup] deposit 1000000000 wei as WETH: tx <hash> status 0x1 block <n> gasUsed <n>
+[failure] withdraw <wad> wei (balance <wad>): tx <hash> status 0x0 block <n> gasUsed <n>
+[retry] withdraw 1000000000 wei: tx <hash> status 0x1 block <n> gasUsed <n>
+[memory] STORED job=<id> blob=<id>
+[next-failure] withdraw <wad> wei (balance <wad>): tx <hash> status 0x0 block <n> gasUsed <n>
+  WITHOUT memory: Tx <hash> on base reverted (0x2e1a7d4d:reverted). No prior successful path on record ...
+  WITH memory: prior success <retry hash> (block <n>, blob <id>)
+  NEXT ACTION
+    ...
+```
+`tests/live.test.ts` runs the same flow offline against a fake Base chain with WETH9 behaviour, signing with Anvil's public dev key, and checks that the key never appears in the output. A real run has not been made yet.
 
 ## Wallet classifier
 

@@ -11,14 +11,16 @@
     "typecheck": "tsc -p .",
     "classify": "tsx scripts/classify.ts",
     "pick": "tsx scripts/pick.ts",
-    "watch": "tsx scripts/watch.ts"
+    "watch": "tsx scripts/watch.ts",
+    "live-demo": "tsx scripts/live-demo.ts"
   },
   "keywords": [],
   "author": "",
   "license": "Apache-2.0",
   "type": "module",
   "dependencies": {
-    "@mysten-incubation/memwal": "^0.1.10"
+    "@mysten-incubation/memwal": "^0.1.10",
+    "viem": "^2.57.13"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
