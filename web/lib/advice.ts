@@ -23,7 +23,7 @@ export interface FailureFacts {
 
 export function parseNextAction(text: string): NextAction {
   const a: NextAction = { calldata: [], moreWords: 0 };
-  const why = text.match(/(?:^|; )reason: (.*?) \(used \d+ of \d+ gas, not out of gas\)/);
+  const why = text.match(/(?:^|; )reason: (.*? \(used \d+ of \d+ gas, not out of gas\))/);
   if (why) a.reason = why[1];
   for (const m of text.matchAll(/arg word (\d+) = (\S+) \(was (\S+?)\)/g)) a.calldata.push({ index: Number(m[1]), to: m[2], from: m[3] });
   const more = text.match(/\+(\d+) more words differ/);
@@ -38,7 +38,7 @@ export function parseNextAction(text: string): NextAction {
   if (gp) a.gasPrice = { floor: gp[1], failed: gp[2] };
   const rs = text.match(/resubmit identical calldata\/gas after ~(\d+) blocks \((\d+)s\)/);
   if (rs) a.resubmit = `${rs[1]} blocks (${rs[2]}s)`;
-  a.templateTx = text.match(/template tx (0x[0-9a-f]+)/)?.[1];
+  a.templateTx = text.match(/template tx (\S+)/)?.[1];
   return a;
 }
 

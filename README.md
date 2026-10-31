@@ -145,25 +145,29 @@ LIVE DEMO base wallet <address> (key from DEMO_PRIVATE_KEY, not shown): <wei> we
 
 ## Sui (built, not yet verified on Mainnet)
 
-`src/sui.ts` runs the same loop on Sui through Tatum's Sui JSON-RPC gateway (`https://sui-mainnet.gateway.tatum.io`).
+`src/sui.ts` runs the same loop on Sui through Tatum's Sui gateway. That gateway serves **GraphQL only** (`POST https://sui-mainnet.gateway.tatum.io/graphql`, `x-api-key`, one operation per request), not `sui_*` JSON-RPC. A first JSON-RPC version failed with HTTP 404 on a real run and was replaced.
 
 | EVM concept | Sui equivalent |
 |---|---|
-| contract | Move call target `package::module::function` |
 | wallet | sender |
+| contract | the called `package::module` that matches the abort location (else one in the same package, else the last Move call) |
 | block | checkpoint |
-| calldata words | pure inputs and type arguments |
-| revert reason | `MoveAbort` location and code, e.g. `moveabort:pool::swap_exact_in:7` |
+| calldata words | `Pure` inputs (BCS bytes, shown as hex) |
+| revert reason | `executionError`: `moveabort:<module>::<function>:<abortCode>`, where module and function are where the abort happened, which can differ from the functions the transaction called |
 
-`InsufficientGas` maps to `out-of-gas`, so the gas gate applies unchanged. Failures are read with `sui_getTransactionBlock` (effects + input), retries are found by walking the sender's history newest-first with `suix_queryTransactionBlocks`, and memories use the same tags and recall path as EVM memories.
+- **Retry search:** one server-side filter, `transactions(filter: { sentAddress, function: "<package>::<module>", afterCheckpoint })`, paged with `first` and `after`. The first later `SUCCESS` that calls the same module is the retry. The `function` filter matches functions the transaction *called*, so filtering on the abort location returns nothing when that function was not a command.
+- **Gas gate:** `InsufficientGas` maps to `out-of-gas`, so the gate applies unchanged.
+- **Memories:** the same tags, recall path (`recallFor`) and rate limit as EVM memories.
 
 ```bash
-npm run sui:check                                 # feasibility: chain id, latest checkpoint, a real failed Move call, its retry
+npm run sui:check [-- --record sui-run.json]      # GraphQL reachable, ~50 programmable txs decoded, a later retry from the same sender
 npm run sui -- record <failedDigest> [okDigest] --dry-run
 npm run sui -- recall <failedDigest> --store ledger
 ```
 
-`sui:check` prints PASS or FAIL per step with the exact error, and exits 2 if the gateway is not usable with your key. Tests (`tests/sui.test.ts`) run on synthetic transactions in Sui's documented JSON-RPC shape. **Status: not verified.** No Sui call has been made with the project's key yet, and no Sui memory has been written, so Clew does not claim Sui support until `sui:check` passes and a real pair has gone through record and recall.
+`sui:check` prints PASS or FAIL per step with the server's exact error, then `SUI GATEWAY OK` or `SUI GATEWAY NOT USABLE`. It looks at failures about 10 minutes old, so their retries can already exist. `--record` saves every request and response, so a real run can become a test fixture.
+
+All queries validate against Sui's published GraphQL schema (`crates/sui-indexer-alt-graphql/schema.graphql`). Tests parse two real responses recorded through Tatum on 2026-10-31 (`fixtures/sui-recorded-2026-10-31.json`); command lists, sender history and the record/recall flow are synthetic and labelled. **Status: not verified.** Clew does not claim Sui support until `sui:check` passes on Mainnet and a real pair has gone through record and recall.
 
 ## Wallet classifier
 

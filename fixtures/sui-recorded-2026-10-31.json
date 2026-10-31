@@ -1,0 +1,12 @@
+{
+  "_recorded": "Real responses from Tatum's Sui Mainnet GraphQL gateway (POST https://sui-mainnet.gateway.tatum.io/graphql, x-api-key), recorded 2026-10-31 with the project key and pasted verbatim from the run notes. Only these two responses are recorded; every other Sui fixture in tests/sui.test.ts is synthetic and says so.",
+  "checkpoint": {
+    "query": "{ checkpoint { sequenceNumber } }",
+    "response": { "data": { "checkpoint": { "sequenceNumber": 340151921 } } }
+  },
+  "failureNode": {
+    "query": "{ transactions(first:50, filter:{kind:PROGRAMMABLE_TX}) { nodes { digest effects { status executionError { abortCode message instructionOffset module { name package { address } } function { name } } checkpoint { sequenceNumber } gasEffects { gasSummary { computationCost storageCost } } } sender { address } gasInput { gasBudget gasPrice } } } }",
+    "note": "One FAILURE node from that page (8 of 50 recent programmable transactions were FAILURE). The transaction's commands were reported as balance_manager::generate_proof_as_owner then pool::place_limit_order; the abort happened in balance_manager::withdraw_with_proof.",
+    "node": {"digest":"GJdRDQAjvBBgsWvuNkf7m9WpAagFWPkpVSSoBtqWMJDc","effects":{"status":"FAILURE","executionError":{"abortCode":"3","message":"Error in 2nd command, from '0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a::balance_manager::withdraw_with_proof' (instruction 55), abort code: 3","instructionOffset":55,"module":{"name":"balance_manager","package":{"address":"0xcaf6ba059d539a97646d47f0b9ddf843e138d215e2a12ca1f4585d386f7aec3a"}},"function":{"name":"withdraw_with_proof"}},"checkpoint":{"sequenceNumber":305948772},"gasEffects":{"gasSummary":{"computationCost":111100,"storageCost":5198400}}},"sender":{"address":"0xffd4f043057226453aeba59732d41c6093516f54823ebc3a16d17f8a77d2f0ad"},"gasInput":{"gasBudget":"10000000","gasPrice":"110"}}
+  }
+}

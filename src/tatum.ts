@@ -6,7 +6,6 @@ export const GATEWAYS: Record<string, string> = {
   arbitrum: "https://arbitrum-one-mainnet.gateway.tatum.io",
   optimism: "https://optimism-mainnet.gateway.tatum.io",
   bsc: "https://bsc-mainnet.gateway.tatum.io",
-  sui: "https://sui-mainnet.gateway.tatum.io", // Sui JSON-RPC (sui_*, suix_*), used by src/sui.ts
 };
 
 // Free Tatum plan = 3 req/s. Serialize calls with a small gap and retry on 429.
@@ -29,33 +28,51 @@ export async function rpc(chain: string, method: string, params: unknown[] = [])
   return override ? override(chain, method, params) : tatumRpc(chain, method, params);
 }
 
-/** The real gateway call: throttled to the free plan's 3 req/s, with backoff on 429. */
-export async function tatumRpc(chain: string, method: string, params: unknown[] = []): Promise<any> {
-  const url = GATEWAYS[chain];
-  if (!url) throw new Error(`unsupported chain ${chain}`);
+/** Tatum's Sui gateway serves GraphQL only (no sui_* JSON-RPC): one operation per request, x-api-key header. */
+export const SUI_GRAPHQL = "https://sui-mainnet.gateway.tatum.io/graphql";
+
+/** POST through the shared throttle (free plan: 3 req/s), retrying with backoff on 429. Returns the parsed body. */
+function post(url: string, payload: unknown): Promise<any> {
   const key = process.env.TATUM_API_KEY;
-  if (!key) throw new Error("TATUM_API_KEY not set");
+  if (!key) return Promise.reject(new Error("TATUM_API_KEY not set"));
   const run = async () => {
     for (let attempt = 0; attempt < 6; attempt++) {
       const wait = last + MIN_GAP_MS - Date.now();
       if (wait > 0) await sleep(wait);
       last = Date.now();
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-api-key": key },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-      });
+      const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json", "x-api-key": key }, body: JSON.stringify(payload) });
       const body: any = await res.json().catch(() => ({}));
       if (res.status === 429 || body?.statusCode === 429) { await sleep(BACKOFF_MS * (attempt + 1)); continue; }
-      if (body.error) throw new RpcError(body.error.message, body.error.code, body.error.data);
-      if (!res.ok) throw new RpcError(`HTTP ${res.status}`);
-      return body.result;
+      return { status: res.status, ok: res.ok, body };
     }
     throw new RpcError("rate limited after retries", 429);
   };
   const p = queue.then(run, run);
   queue = p.catch(() => undefined);
   return p;
+}
+
+/** The real JSON-RPC gateway call (EVM chains). */
+export async function tatumRpc(chain: string, method: string, params: unknown[] = []): Promise<any> {
+  const url = GATEWAYS[chain];
+  if (!url) throw new Error(`unsupported chain ${chain}`);
+  const { ok, status, body } = await post(url, { jsonrpc: "2.0", id: 1, method, params });
+  if (body.error) throw new RpcError(body.error.message, body.error.code, body.error.data);
+  if (!ok) throw new RpcError(`HTTP ${status}`);
+  return body.result;
+}
+
+/** One GraphQL operation against Sui (tests and recorders can intercept it through setRpc, method "graphql"). */
+export async function graphql(query: string, variables: Record<string, unknown> = {}): Promise<any> {
+  return override ? override("sui", "graphql", [query, variables]) : tatumGraphql(query, variables);
+}
+
+/** The real call to Tatum's Sui GraphQL gateway. GraphQL errors are thrown with the server's messages verbatim. */
+export async function tatumGraphql(query: string, variables: Record<string, unknown> = {}): Promise<any> {
+  const { ok, status, body } = await post(SUI_GRAPHQL, { query, variables });
+  if (body.errors?.length) throw new RpcError(`GraphQL: ${body.errors.map((e: any) => e.message).join("; ")}`, status, body.errors);
+  if (!ok) throw new RpcError(`HTTP ${status}`, status);
+  return body.data;
 }
 
 export const getReceipt = (c: string, h: string) => rpc(c, "eth_getTransactionReceipt", [h]);

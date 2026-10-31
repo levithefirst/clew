@@ -110,8 +110,8 @@ export function suggest(f: Attempt, s: Attempt, d: Diff): string {
 export interface NextAction {
   reason?: string;
   calldata: { index: number; to: string; from: string }[]; moreWords: number;
-  /** Sui: changed pure inputs and type arguments (EVM memories use calldata words instead). */
-  inputs: { index: number; to: string; from: string }[]; typeArgs?: string;
+  /** Sui: changed Pure inputs (EVM memories use calldata words instead). */
+  inputs: { index: number; to: string; from: string }[];
   callInstead?: { to: string; from: string }; value?: { to: string; from: string };
   gasLimit?: { floor: number; failed: number }; gasPrice?: { floor: string; failed: string };
   resubmit?: string; templateTx?: string;
@@ -120,8 +120,7 @@ export interface NextAction {
 export function parseNextAction(text: string): NextAction {
   const a: NextAction = { calldata: [], moreWords: 0, inputs: [] };
   for (const m of text.matchAll(/input (\d+) = (\S+) \(was (\S+?)\)/g)) a.inputs.push({ index: Number(m[1]), to: m[2], from: m[3] });
-  const ta = text.match(/use type arguments (\S+)/); if (ta) a.typeArgs = ta[1];
-  const why = text.match(/(?:^|; )reason: (.*?) \(used \d+ of \d+ gas, not out of gas\)/); if (why) a.reason = why[1];
+  const why = text.match(/(?:^|; )reason: (.*? \(used \d+ of \d+ gas, not out of gas\))/); if (why) a.reason = why[1];
   for (const m of text.matchAll(/arg word (\d+) = (\S+) \(was (\S+?)\)/g)) a.calldata.push({ index: Number(m[1]), to: m[2], from: m[3] });
   const more = text.match(/\+(\d+) more words differ/); if (more) a.moreWords = Number(more[1]);
   const fn = text.match(/call (0x[0-9a-f]+) instead of (0x[0-9a-f]+)/); if (fn) a.callInstead = { to: fn[1], from: fn[2] };
@@ -129,7 +128,7 @@ export function parseNextAction(text: string): NextAction {
   const gl = text.match(/(?:raise gas limit to >= |retry used gas limit )(\d+) \(failed with limit (\d+)/); if (gl) a.gasLimit = { floor: Number(gl[1]), failed: Number(gl[2]) };
   const gp = text.match(/(?:bid gas price >= |retry bid )(\d+) wei \(failed at (\d+)\)/); if (gp) a.gasPrice = { floor: gp[1], failed: gp[2] };
   const rs = text.match(/resubmit identical calldata\/gas after ~(\d+) blocks \((\d+)s\)/); if (rs) a.resubmit = `${rs[1]} blocks (${rs[2]}s)`;
-  a.templateTx = text.match(/template tx (0x[0-9a-f]+)/)?.[1];
+  a.templateTx = text.match(/template tx (\S+)/)?.[1]; // EVM 0x hash or Sui base58 digest
   return a;
 }
 
@@ -158,7 +157,6 @@ export function formatNextAction(a: NextAction): string {
     for (const c of a.calldata) out.push(`    arg word ${c.index} = ${c.to} (was ${c.from})`);
     if (a.moreWords) out.push(`    +${a.moreWords} more word${a.moreWords === 1 ? " differs; copy it" : "s differ; copy them"} from the template tx`);
   }
-  if (a.typeArgs) out.push(`- Use type arguments ${a.typeArgs}.`);
   if (a.inputs.length) {
     out.push(`- Change the transaction inputs like the retry:`);
     for (const i of a.inputs) out.push(`    input ${i.index} = ${i.to} (was ${i.from})`);

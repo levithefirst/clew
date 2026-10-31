@@ -96,6 +96,7 @@ test("gas gate: a revert retried with more gas gets the reason, not a gas hint",
   assert.doesNotMatch(next, /gas limit|retry bid|gas price/);
   assert.match(r.text, /gas price 2000000000 vs 1000000000 wei/); // still recorded as a fact in Change
   assert.match(r.text, /calldata 36 -> 36 bytes/);
+  assert.match(formatNextAction(parseNextAction(next)), /^- Failure reason: Expired \(used 30000 of 100000 gas, not out of gas\)\.$/m);
 });
 
 test("gas gate: real stored memory 0x3b9e41d7 (34296 of 626972 gas) loses its stored gas hint at recall", () => {
