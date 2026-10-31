@@ -61,6 +61,16 @@ Prior successful retry (template): 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55
 
 The first answer gives you nothing to act on. The second gives you a known-good transaction to copy and the exact calldata words that differed. On the site, the same block has a **Copy suggestion** button that puts the full values on the clipboard.
 
+## How it learned over time
+
+Clew's memory grows one confirmed pair at a time, and each pair changes what it says next.
+
+1. **First pass.** Discovery scanned recent Base, Ethereum and Polygon blocks through Tatum and found real wallets that failed and then succeeded on the same contract. Twelve of those pairs became Walrus Mainnet memories, each confirmed by `waitForRememberJob`.
+2. **Repeat failures.** Nine of those twelve wallets failed again later with a similar error. Recall has been run on Mainnet for three of them so far (all on Base), and for each the answer changed from "reverted" to the path that worked, as in the Base example above. The demo script now recalls all nine on its next run.
+3. **Correcting itself without rewriting history.** Reviewing the stored memories showed two weaknesses. Some memories gave a gas hint when the failure had not run out of gas, and one stored six full 32-byte calldata words. Walrus memories are never edited. Instead, recall now applies a gas gate when it reads a memory, and a corrected memory is written as a new revision that supersedes the old one in the ledger.
+4. **Knowing who it learned from.** A wallet classifier now tags every memory bot-like or human-like, so the examples Clew leads with are the ones a person is most likely to recognise.
+5. **Next: learning live.** A watcher (`npm run watch`) follows new blocks and answers fresh failures from remembered wallets as they happen. A scripted live demo on Base creates a fresh failure, retry, memory and recall on demand. Both are built and tested offline; neither has been run against Mainnet yet.
+
 ## Honest caveat
 
 Most wallets that fail and then succeed on the same contract within minutes are bots: routers, MEV searchers, relayers. Clew now says so per wallet. A small, documented heuristic tags each one bot-like or human-like from public behaviour: lifetime nonce, how fast the retry landed, other transactions in between, and how often the wallet hit the same contract. Of the 12 stored memories, 11 are bot-like (nonces up to 2.8 million, retries within seconds, up to 55 calls to one contract in about 5 minutes). One, on Ethereum, shows no automation signal. "Human-like" only means no signal was seen, never that a person is confirmed. So in the real data the change is often just a fresh quote, a new deadline, or a higher gas price, not a clever human fix. Clew doesn't claim to know *why* the retry worked. It reports exactly what differed, and it only gives a gas hint when the failed attempt actually ran out of gas. None of the 12 stored failures did (the highest used 78% of its limit), so for all of them Clew shows the revert reason instead, even where the retry happened to raise the gas limit or bid a higher price. It always hands back the prior successful transaction as a template. That part is useful whether the fix was a new quote or a new bid.

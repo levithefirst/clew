@@ -60,11 +60,11 @@ npm run pick -- base=8 ethereum=2          # choose pairs: human-like wallets fi
 npm run classify                           # offline: tag each memory's wallet bot-like / human-like (fixtures/wallet-classes.json)
 ```
 
-## Two-minute demo
+## Demo
 
-Exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](BLOG.md).
+The 2 to 3 minute video script with exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](BLOG.md).
 
-1. `npm test` (about 1 s) shows the logic offline.
+1. `npm test` (about 1 s, 26 tests) shows the logic offline.
 2. `npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 --without-memory` returns only the generic "reverted" message.
 3. The same command without the flag recalls the stored memory for wallet `0x336a…` on contract `0x8ea5…` and returns the earlier retry `0x389a…` with a copy-ready next action: the revert reason, then the calldata words to re-encode. No gas hint: that failure used 78% of its gas limit.
 4. `memories.json` lists the 12 Walrus Mainnet writes (job id + blob id + text). Each blob resolves at `https://walruscan.com/mainnet/blob/<blob_id>`; the content is SEAL-encrypted, so Walruscan shows that the blob exists, not its text.
