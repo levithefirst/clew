@@ -3,7 +3,7 @@
 //   wallet   = sender
 //   contract = the called package::module that best matches the abort location (see primaryCall)
 //   block    = checkpoint
-//   calldata = Pure inputs (BCS bytes, shown as hex)
+//   calldata = Pure inputs (BCS bytes, shown as hex); object inputs are not compared
 //   revert   = executionError: moveabort:<module>::<function>:<abortCode>, where module/function are where it aborted,
 //              which can differ from the functions the transaction called.
 // Status: field names follow Sui's GraphQL schema (crates/sui-indexer-alt-graphql/schema.graphql); the failure query
@@ -72,7 +72,7 @@ export function primaryCall(calls: SuiCall[], abort?: SuiCall): SuiCall | undefi
 
 export function suiErrorSignature(abort: (SuiCall & { code: string }) | undefined, message: string | undefined, fallbackFn: string): string {
   if (abort) return `moveabort:${abort.module}::${abort.function}:${abort.code}`;
-  if (/InsufficientGas|out of gas/i.test(message ?? "")) return `out-of-gas:${fallbackFn}`;
+  if (/insufficient ?gas|out of gas/i.test(message ?? "")) return `out-of-gas:${fallbackFn}`; // Sui reports "Insufficient Gas"
   return message ? `sui:${message.toLowerCase().replace(/0x[0-9a-f]+/g, "0x_").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60)}` : `${fallbackFn}:failed`;
 }
 
@@ -139,16 +139,23 @@ export async function findSuiRetry(f: SuiAttempt, windowCheckpoints = 3_000, max
 
 const clip = (v: string) => (v.length > 24 ? `${v.slice(0, 12)}…${v.slice(-6)}` : v);
 
+/**
+ * Only Pure inputs carry comparable values (their BCS bytes); object inputs are known only by type, so they are not
+ * compared and the memory says so instead of claiming the inputs were identical.
+ */
+const isPure = (v: string | undefined) => v?.startsWith("0x") ?? false;
+
 export function suiMemoryText(f: SuiAttempt, s: SuiAttempt): string {
-  const changed = f.inputs.map((v, i) => ({ i, from: v, to: s.inputs[i] })).filter((x) => x.from !== x.to);
+  const pure = f.inputs.filter(isPure).length;
+  const changed = f.inputs.map((v, i) => ({ i, from: v, to: s.inputs[i] })).filter((x) => isPure(x.from) && x.from !== x.to);
   const sameCalls = f.calls.map((c) => `${modulePath(c)}::${c.function}`).join(",") === s.calls.map((c) => `${modulePath(c)}::${c.function}`).join(",");
   const oog = isOutOfGas(f.errorSig, f.gasUsed, f.gasLimit);
   const detail = (f.errorDetail ?? "").slice(0, 120);
   const changes = [
     `gas used was ${s.gasUsed} vs ${f.gasUsed} on failure`, `gas limit ${s.gasLimit} vs ${f.gasLimit}`, `gas price ${s.gasPrice} vs ${f.gasPrice} MIST`,
     sameCalls ? `same ${f.calls.length} Move call(s)` : `Move calls ${f.calls.map((c) => `${c.module}::${c.function}`).join(",") || "none"} -> ${s.calls.map((c) => `${c.module}::${c.function}`).join(",") || "none"}`,
-    `inputs ${f.inputs.length} -> ${s.inputs.length}`,
-    changed.length ? `${changed.length} input(s) changed (` + changed.slice(0, 3).map((c) => `input ${c.i} ${clip(c.from)} -> ${clip(c.to ?? "∅")}`).join(", ") + ")" : "inputs identical",
+    `inputs ${f.inputs.length} -> ${s.inputs.length}, ${pure} Pure (object inputs not compared)`,
+    changed.length ? `${changed.length} pure input(s) changed (` + changed.slice(0, 3).map((c) => `input ${c.i} ${clip(c.from)} -> ${clip(c.to ?? "∅")}`).join(", ") + ")" : "pure inputs identical",
   ].join("; ");
   const next = [
     oog ? `out of gas: retry used gas limit ${s.gasLimit} (failed with limit ${f.gasLimit}, retry used ${s.gasUsed}); consider gas limit >= ${s.gasLimit}` : `reason: ${detail} (used ${f.gasUsed} of ${f.gasLimit} gas, not out of gas)`,

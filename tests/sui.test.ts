@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { setRpc } from "../src/tatum.ts";
-import { toSuiAttempt, primaryCall, suiErrorSignature, findSuiRetry, recordSuiRetry, onSuiFailure, loadSuiAttempt } from "../src/sui.ts";
+import { toSuiAttempt, primaryCall, suiErrorSignature, findSuiRetry, recordSuiRetry, onSuiFailure, loadSuiAttempt, suiMemoryText } from "../src/sui.ts";
 import type { MemoryStore, Recalled } from "../src/memory.ts";
 
 const recorded = JSON.parse(readFileSync("fixtures/sui-recorded-2026-10-31.json", "utf8"));
@@ -62,6 +62,8 @@ test("contract choice: the called module where the abort happened, not the abort
   const abort = { package: PKG, module: "vault", function: "x", code: "1" };
   assert.equal(primaryCall([{ package: OTHER, module: "a", function: "f" }, { package: PKG, module: "pool", function: "g" }], abort)?.module, "pool"); // same package
   assert.equal(primaryCall([{ package: OTHER, module: "a", function: "f" }], abort)?.module, "a"); // else last call
+  // Message wording as reported for the real failure xTQrJPFMG2BfqhYX22yNjnhB6B86YkjRubLsGvbvYRa ("Insufficient Gas").
+  assert.equal(suiErrorSignature(undefined, "Insufficient Gas", "swap"), "out-of-gas:swap");
   assert.equal(suiErrorSignature(undefined, "InsufficientGas", "f"), "out-of-gas:f");
 });
 
@@ -100,7 +102,7 @@ test("record + recall: the next abort from the same sender gets the changed inpu
   };
   const r = await recordSuiRetry("Fail1", "Okay4", store);
   assert.match(r.text, new RegExp(`^CLEW chain=sui contract=${PKG}::balance_manager wallet=${SENDER} error=moveabort:balance_manager::withdraw_with_proof:3 selector=generate_proof_as_owner `));
-  assert.match(r.text, /same 2 Move call\(s\); inputs 3 -> 3; 1 input\(s\) changed \(input 1 0xe803 -> 0xd007\)/);
+  assert.match(r.text, /same 2 Move call\(s\); inputs 3 -> 3, 2 Pure \(object inputs not compared\); 1 pure input\(s\) changed \(input 1 0xe803 -> 0xd007\)/);
   await assert.rejects(recordSuiRetry("Fail1", "Other3", store), /same sender calling the same package::module/);
   const hit = await onSuiFailure("Fail6", { store });
   assert.ok(hit.matched);
@@ -110,4 +112,19 @@ test("record + recall: the next abort from the same sender gets the changed inpu
     assert.match(hit.suggestion, /input 1 = 0xd007 \(was 0xe803\)/);
     assert.match(hit.suggestion, /^Prior successful retry \(template\): Okay4$/m);
   }
+});
+
+test("Insufficient Gas failures get the out-of-gas signature and a gas-limit hint (synthetic node, real message wording)", () => {
+  const f = toSuiAttempt({ ...node("Gas1", 10, false, "01"), effects: { ...node("Gas1", 10, false, "01").effects, executionError: { abortCode: null, message: "Insufficient Gas", module: null, function: null } } });
+  const s = toSuiAttempt(node("Gas2", 11, true, "01"));
+  assert.equal(f.errorSig, "out-of-gas:place_limit_order"); // no abort location: the last Move call
+  assert.match(suiMemoryText(f, s), /NEXT_ACTION: out of gas: retry used gas limit 10000000/);
+});
+
+test("object inputs are not compared: a pair differing only there says pure inputs identical", () => {
+  const f = toSuiAttempt(node("A", 10, false, "01"));
+  const s = { ...toSuiAttempt(node("B", 11, true, "01")), inputs: ["OwnedOrImmutable", "0x01", "0x01"] }; // object input type differs
+  const text = suiMemoryText(f, s);
+  assert.match(text, /inputs 3 -> 3, 2 Pure \(object inputs not compared\); pure inputs identical\./);
+  assert.doesNotMatch(text, /; inputs identical/);
 });
