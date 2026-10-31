@@ -6,6 +6,7 @@ export const GATEWAYS: Record<string, string> = {
   arbitrum: "https://arbitrum-one-mainnet.gateway.tatum.io",
   optimism: "https://optimism-mainnet.gateway.tatum.io",
   bsc: "https://bsc-mainnet.gateway.tatum.io",
+  sui: "https://sui-mainnet.gateway.tatum.io", // Sui JSON-RPC (sui_*, suix_*), used by src/sui.ts
 };
 
 // Free Tatum plan = 3 req/s. Serialize calls with a small gap and retry on 429.

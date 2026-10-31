@@ -42,7 +42,7 @@ cp .env.example .env   # fill in, then: set -a; . ./.env; set +a
 | `TATUM_API_KEY` | Tatum API key (the free plan works; Clew throttles itself to ~3 req/s) |
 | `DEMO_PRIVATE_KEY` | optional, `npm run live-demo` only: a throwaway Base burner key (see Live demo) |
 
-Supported chains (Tatum gateways): `ethereum`, `base`, `polygon`, `arbitrum`, `optimism`, `bsc`.
+Supported chains (Tatum gateways): `ethereum`, `base`, `polygon`, `arbitrum`, `optimism`, `bsc`. Sui is built but not yet verified (see below).
 
 ## Commands
 
@@ -142,6 +142,28 @@ LIVE DEMO base wallet <address> (key from DEMO_PRIVATE_KEY, not shown): <wei> we
     ...
 ```
 `tests/live.test.ts` runs the same flow offline against a fake Base chain with WETH9 behaviour, signing with Anvil's public dev key, and checks that the key never appears in the output. A real run has not been made yet.
+
+## Sui (built, not yet verified on Mainnet)
+
+`src/sui.ts` runs the same loop on Sui through Tatum's Sui JSON-RPC gateway (`https://sui-mainnet.gateway.tatum.io`).
+
+| EVM concept | Sui equivalent |
+|---|---|
+| contract | Move call target `package::module::function` |
+| wallet | sender |
+| block | checkpoint |
+| calldata words | pure inputs and type arguments |
+| revert reason | `MoveAbort` location and code, e.g. `moveabort:pool::swap_exact_in:7` |
+
+`InsufficientGas` maps to `out-of-gas`, so the gas gate applies unchanged. Failures are read with `sui_getTransactionBlock` (effects + input), retries are found by walking the sender's history newest-first with `suix_queryTransactionBlocks`, and memories use the same tags and recall path as EVM memories.
+
+```bash
+npm run sui:check                                 # feasibility: chain id, latest checkpoint, a real failed Move call, its retry
+npm run sui -- record <failedDigest> [okDigest] --dry-run
+npm run sui -- recall <failedDigest> --store ledger
+```
+
+`sui:check` prints PASS or FAIL per step with the exact error, and exits 2 if the gateway is not usable with your key. Tests (`tests/sui.test.ts`) run on synthetic transactions in Sui's documented JSON-RPC shape. **Status: not verified.** No Sui call has been made with the project's key yet, and no Sui memory has been written, so Clew does not claim Sui support until `sui:check` passes and a real pair has gone through record and recall.
 
 ## Wallet classifier
 

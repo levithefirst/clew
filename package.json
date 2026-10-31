@@ -12,7 +12,9 @@
     "classify": "tsx scripts/classify.ts",
     "pick": "tsx scripts/pick.ts",
     "watch": "tsx scripts/watch.ts",
-    "live-demo": "tsx scripts/live-demo.ts"
+    "live-demo": "tsx scripts/live-demo.ts",
+    "sui": "tsx scripts/sui.ts",
+    "sui:check": "tsx scripts/sui.ts check"
   },
   "keywords": [],
   "author": "",

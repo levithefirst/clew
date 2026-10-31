@@ -110,13 +110,17 @@ export function suggest(f: Attempt, s: Attempt, d: Diff): string {
 export interface NextAction {
   reason?: string;
   calldata: { index: number; to: string; from: string }[]; moreWords: number;
+  /** Sui: changed pure inputs and type arguments (EVM memories use calldata words instead). */
+  inputs: { index: number; to: string; from: string }[]; typeArgs?: string;
   callInstead?: { to: string; from: string }; value?: { to: string; from: string };
   gasLimit?: { floor: number; failed: number }; gasPrice?: { floor: string; failed: string };
   resubmit?: string; templateTx?: string;
 }
 
 export function parseNextAction(text: string): NextAction {
-  const a: NextAction = { calldata: [], moreWords: 0 };
+  const a: NextAction = { calldata: [], moreWords: 0, inputs: [] };
+  for (const m of text.matchAll(/input (\d+) = (\S+) \(was (\S+?)\)/g)) a.inputs.push({ index: Number(m[1]), to: m[2], from: m[3] });
+  const ta = text.match(/use type arguments (\S+)/); if (ta) a.typeArgs = ta[1];
   const why = text.match(/(?:^|; )reason: (.*?) \(used \d+ of \d+ gas, not out of gas\)/); if (why) a.reason = why[1];
   for (const m of text.matchAll(/arg word (\d+) = (\S+) \(was (\S+?)\)/g)) a.calldata.push({ index: Number(m[1]), to: m[2], from: m[3] });
   const more = text.match(/\+(\d+) more words differ/); if (more) a.moreWords = Number(more[1]);
@@ -153,6 +157,11 @@ export function formatNextAction(a: NextAction): string {
     out.push(`- Re-encode calldata like the retry:`);
     for (const c of a.calldata) out.push(`    arg word ${c.index} = ${c.to} (was ${c.from})`);
     if (a.moreWords) out.push(`    +${a.moreWords} more word${a.moreWords === 1 ? " differs; copy it" : "s differ; copy them"} from the template tx`);
+  }
+  if (a.typeArgs) out.push(`- Use type arguments ${a.typeArgs}.`);
+  if (a.inputs.length) {
+    out.push(`- Change the transaction inputs like the retry:`);
+    for (const i of a.inputs) out.push(`    input ${i.index} = ${i.to} (was ${i.from})`);
   }
   if (a.gasLimit) out.push(`- Out of gas: the failed attempt hit its limit of ${a.gasLimit.failed}; the retry used a limit of ${a.gasLimit.floor}. Consider >= ${a.gasLimit.floor}.`);
   if (a.gasPrice) out.push(`- Gas price: the retry bid ${a.gasPrice.floor} wei (failed at ${a.gasPrice.failed}).`);
@@ -243,9 +252,12 @@ export function rememberedFailure(text: string): FailureFacts {
 const byRecency = (a: Recalled, b: Recalled) =>
   Number(field(b.text, "success_block")) - Number(field(a.text, "success_block")) || Number(field(b.text, "rev") ?? 1) - Number(field(a.text, "rev") ?? 1);
 
-export async function onFailure(chain: string, hash: string, opts: { store?: MemoryStore; namespace?: string } = {}) {
+/** The fields recall needs from a failure, on any chain (an EVM Attempt or a Sui attempt both fit). */
+export interface FailureLike extends FailureFacts { chain: string; hash: string; contract: string; wallet: string; selector: string }
+
+/** Recall for a failure already loaded: semantic search, then the strict tag filter, newest path first, gas gate. */
+export async function recallFor<F extends FailureLike>(f: F, opts: { store?: MemoryStore; namespace?: string } = {}) {
   const store = opts.store ?? walrus;
-  const f = await recordFailure(chain, hash);
   const query = `CLEW chain=${f.chain} contract=${f.contract} wallet=${f.wallet} error=${f.errorSig} selector=${f.selector}`;
   const hits = await store.recall(query, { namespace: opts.namespace, topK: 10 });
   const match = hits
@@ -254,7 +266,7 @@ export async function onFailure(chain: string, hash: string, opts: { store?: Mem
     .sort(byRecency)[0];
   if (!match) {
     return { matched: false as const, failure: f,
-      message: `Tx ${f.hash} on ${chain} reverted (${f.errorSig}). No prior successful path on record for this wallet+contract. Check params and retry.` };
+      message: `Tx ${f.hash} on ${f.chain} reverted (${f.errorSig}). No prior successful path on record for this wallet+contract. Check params and retry.` };
   }
   const stored = match.text.match(/NEXT_ACTION: (.*)$/)?.[1] ?? "";
   const nextAction = gateGasHints(parseNextAction(stored), rememberedFailure(match.text), f);
@@ -264,4 +276,9 @@ export async function onFailure(chain: string, hash: string, opts: { store?: Mem
       change: match.text.match(/Change: (.*?)\. NEXT_ACTION/)?.[1] },
     nextAction, suggestion: formatNextAction(nextAction), storedNextAction: stored,
   };
+}
+
+/** Step 4 on an EVM chain: ingest the new failure through Tatum, then recall. */
+export async function onFailure(chain: string, hash: string, opts: { store?: MemoryStore; namespace?: string } = {}) {
+  return recallFor(await recordFailure(chain, hash), opts);
 }
