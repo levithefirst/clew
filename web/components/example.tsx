@@ -167,13 +167,13 @@ export function Example() {
             <span className="hidden sm:inline">job <span className="font-mono text-ink-3">{short(m.job_id, 8, 4)}</span></span>
             <span>namespace <span className="font-mono text-ink-3">{m.namespace}</span></span>
             <span className="ml-auto flex items-center gap-1 text-ink-3">
-              Memory as stored <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
+              Memory text <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
             </span>
           </summary>
           <div className="px-5 pb-6 sm:px-7">
             <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-xl border bg-fill/60 p-4 font-mono text-[0.72rem] leading-relaxed text-ink-3">{m.text}</pre>
             <p className="mt-2 text-label text-ink-4">
-              Written {new Date(m.written_at).toUTCString().replace(" GMT", " UTC")} · job {m.job_id}
+              Written {new Date(m.written_at).toUTCString().replace(" GMT", " UTC")} · job {m.job_id}. Shown from Clew’s local ledger: the blob on Walrus is SEAL-encrypted, so Walruscan confirms it exists but cannot display this text.
             </p>
           </div>
         </details>

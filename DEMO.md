@@ -66,7 +66,7 @@ Add `--json` to either command for the raw result (includes the structured `next
 
 - https://clew-eight.vercel.app/#same-failure shows the same two answers side by side, with a **Copy suggestion** button.
 - Basescan: failure [`0xd72b…4bb6`](https://basescan.org/tx/0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6), prior success [`0x389a…0d03`](https://basescan.org/tx/0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03).
-- Walrus: blob [`B57Lqac7…JOQc`](https://walruscan.com/mainnet/blob/B57Lqac7DaDkXiXwNGHJML0S5Fo1EGOm9CMHmcOJOQc). All 12 job and blob ids are in `memories.json`.
+- Walrus: blob [`B57Lqac7…JOQc`](https://walruscan.com/mainnet/blob/B57Lqac7DaDkXiXwNGHJML0S5Fo1EGOm9CMHmcOJOQc) on Walruscan Mainnet. The page proves the blob exists; its content is SEAL-encrypted, so Walruscan cannot show the memory text. The readable text is in `memories.json`, alongside all 12 job and blob ids.
 
 ## Talking points
 

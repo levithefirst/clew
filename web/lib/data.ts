@@ -69,6 +69,7 @@ const EXPLORER: Record<Chain, string> = {
 export const explorerName: Record<Chain, string> = { base: "Basescan", ethereum: "Etherscan", polygon: "Polygonscan" };
 export const txUrl = (c: Chain, h: string) => `${EXPLORER[c]}/tx/${h}`;
 export const addrUrl = (c: Chain, a: string) => `${EXPLORER[c]}/address/${a}`;
+/** Walruscan Mainnet blob page. Clew memories are SEAL-encrypted: the page proves the blob exists, not its text. */
 export const blobUrl = (id: string) => `https://walruscan.com/mainnet/blob/${id}`;
 
 /** The headline example: first demo recall (Base, "Too little received"). */

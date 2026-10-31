@@ -37,7 +37,7 @@ CLEW chain=base contract=0x8ea5… wallet=0x336a… error=revert:too_little_rece
 failed_tx=0x15f0… success_tx=0x389a… success_block=53152834. … Change: … NEXT_ACTION: …
 ```
 
-There are **12 real Mainnet memories** in namespace `clew`, from 12 real fail → success pairs on 12 distinct contracts (8 Base, 2 Ethereum, 2 Polygon). Job and blob ids are in `memories.json`.
+There are **12 real Mainnet memories** in namespace `clew`, from 12 real fail → success pairs on 12 distinct contracts (8 Base, 2 Ethereum, 2 Polygon). Job and blob ids are in `memories.json`. Each blob resolves on Walruscan Mainnet, but its content is SEAL-encrypted, so the explorer proves the write happened without exposing the memory text.
 
 ## How the memory changed the outcome
 

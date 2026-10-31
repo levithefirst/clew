@@ -94,7 +94,7 @@ export function Hero() {
               ))}
             </ul>
             <p className="mt-4 flex flex-wrap items-center gap-x-2 text-label text-ink-4">
-              Recalled from Walrus blob
+              Recalled from encrypted Walrus blob
               <a href={blobUrl(recall.with_memory.blob_id)} target="_blank" rel="noreferrer" className="font-mono text-ink-3 hover:text-brand" title={recall.with_memory.blob_id}>
                 {short(recall.with_memory.blob_id, 8, 4)} ↗
               </a>
