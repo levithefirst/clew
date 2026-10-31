@@ -6,9 +6,8 @@
 //   calldata = Pure inputs (BCS bytes, shown as hex); object inputs are not compared
 //   revert   = executionError: moveabort:<module>::<function>:<abortCode>, where module/function are where it aborted,
 //              which can differ from the functions the transaction called.
-// Status: field names follow Sui's GraphQL schema (crates/sui-indexer-alt-graphql/schema.graphql); the failure query
-// shape was verified live through Tatum on 2026-10-31. Not verified end to end: `npm run sui:check` exercises every
-// query below. Docs must not claim Sui support until it passes and a real pair has gone through record and recall.
+// Status: verified on Sui Mainnet on 2026-10-31 (sui:check passed, two memories written, one real recall returned
+// the prior path). Field names follow Sui's GraphQL schema (crates/sui-indexer-alt-graphql/schema.graphql).
 import { graphql } from "./tatum.ts";
 import { isOutOfGas, memoryKey, recallFor, type FailureLike } from "./clew.ts";
 import { walrus, type MemoryStore } from "./memory.ts";

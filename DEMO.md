@@ -20,7 +20,7 @@ Open https://clew-eight.vercel.app. One line: "A transaction reverts. Next time 
 npm test
 ```
 
-Expected: `# pass 26`, `# fail 0`. The suite covers revert decoding, the gas gate, the bounded memory format, the wallet classifier, the watcher (reorg + resume on a fixture stream), the live demo against a fake Base chain, and the Sui adapter on synthetic data.
+Expected: `# pass 31`, `# fail 0`. The suite covers revert decoding, the gas gate, the bounded memory format, the wallet classifier, the watcher (reorg + resume on a fixture stream), the live demo against a fake Base chain, and the Sui adapter (real responses recorded on 2026-10-31 plus labelled synthetic history).
 
 ## 0:30 to 1:05 The same failure, without and with memory (a few seconds each)
 
@@ -71,18 +71,27 @@ NEXT ACTION
 npm run classify
 ```
 
-Real output (last two lines shown):
+Real output (last three lines shown):
 
 ```
-polygon  0x8df5279ed8 bot-like   1,800,462 prior transactions; 6 calls to this contract in ~3 min (1 failed)
-12 memories: 1 human-like, 11 bot-like
+sui      FzUf8HxE3yeT bot-like   retried ~1s after failing
+sui      GXwW6feRx386 unclassified no account nonce on sui, so only retry latency was checked: retried ~106s after failing
+14 memories: 1 human-like, 12 bot-like, 1 unclassified
 ```
 
-Say: most real fail-and-retry wallets are bots, and Clew labels each one with the numbers behind the label. The one human-like wallet is on Ethereum (65 prior transactions, retried about 48 s later). "Human-like" means no automation signal, never a confirmed person.
+Say: most real fail-and-retry wallets are bots, and Clew labels each one with the numbers behind the label. The one human-like wallet is on Ethereum (65 prior transactions, retried about 48 s later). Sui has no account nonce, so a Sui wallet with no signal stays unclassified. "Human-like" means no automation signal, never a confirmed person.
 
-## 1:45 to 2:30 A fresh failure, caught and answered (after the first real run)
+## 1:45 to 2:30 A fresh failure, answered on another chain
 
-Use whichever has real output:
+**Sui (real, run on 2026-10-31).** A later slippage abort from a Sui sender whose earlier fail and retry are in memory:
+
+```bash
+npm run sui -- recall 6mDBLQjL4Ld48683HjpZnV4xBQEZB5ymohxzxNaYxcvM
+```
+
+Reported result: `WITH MEMORY`, prior success `ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV` (Walrus blob `qNi52wSg…7eUs`), with the reason line "used 3411613 of 6410000 gas, not out of gas". Paste the full terminal output here when recording. Say: Tatum serves Sui through GraphQL, not JSON-RPC; same loop, same Walrus memory, same recall. That wallet is not classified as human: Sui has no nonce to check.
+
+Or, once it has real output, one of these (after the first real run):
 
 1. **Live demo** on Base with a burner wallet (about 1 minute, cents of gas):
    ```bash
@@ -103,5 +112,6 @@ Use whichever has real output:
 
 - Tatum: `eth_getTransactionReceipt` status `0x0`/`0x1`, `debug_traceTransaction` revert decoding (`Error(string)`, `Panic`, custom selectors), `eth_getBlockReceipts` for retries and the watcher.
 - Walrus: `memwal.remember` + `waitForRememberJob` on the Mainnet relayer, namespace `clew`; `memwal.recall` plus a strict tag filter. Memories are never rewritten: corrections are new revisions.
-- Gas gate: gas hints appear only for out-of-gas failures. None of the 12 stored failures ran out of gas.
-- Not shown, because not verified yet: the watcher's live catches and Sui. See the README for their status.
+- Sui: Tatum's Sui gateway is GraphQL (`/graphql`), not JSON-RPC. `npm run sui:check` passed on Mainnet; two Sui memories are on Walrus; one real recall passed.
+- Gas gate: gas hints appear only for out-of-gas failures. None of the 14 stored failures ran out of gas.
+- Not shown, because not verified yet: the watcher's live catches and the Base live demo. See the README for their status.

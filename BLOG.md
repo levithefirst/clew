@@ -16,12 +16,14 @@ Clew handles one loop: **failure → successful retry → next failure**.
 
 ## How Tatum is used
 
-All chain reads go through Tatum RPC gateways (Base, Ethereum, Polygon in the demo).
+All chain reads go through Tatum gateways: JSON-RPC for Base, Ethereum and Polygon, and GraphQL for Sui (details below).
 
 - `eth_getTransactionReceipt` gives the status: `0x0` is a failure, `0x1` a success. Clew only treats `0x0` as a failure and only accepts a `0x1` tx as the retry.
 - `eth_getTransactionByHash` gives calldata, gas limit, value and nonce. `eth_getBlockByNumber` gives the timestamp.
 - **Revert decoding:** `debug_traceTransaction` with `callTracer`, falling back to an `eth_call` replay at `block - 1`. Clew decodes `Error(string)` (`0x08c379a0`), `Panic(uint256)` (`0x4e487b71`) and custom error selectors, then normalizes them into an error signature such as `revert:too_little_received`.
 - `eth_getBlockReceipts` finds the successful retry from the same wallet to the same contract after the failure.
+
+**Sui.** Tatum's Sui gateway serves GraphQL, not JSON-RPC (`POST https://sui-mainnet.gateway.tatum.io/graphql`; our first JSON-RPC attempt got HTTP 404). One query returns everything Clew needs per transaction: the sender, gas budget and price, the status, the checkpoint, the Move calls, the inputs, and `executionError`, which names the module, function and abort code where the transaction aborted. That becomes the error signature, for example `moveabort:errors::err_amount_out_slippage_check_failed:1`. The retry is found with one filtered query: same sender, same `package::module`, after the failure's checkpoint.
 
 ## How Walrus Memory is used
 
@@ -37,7 +39,7 @@ CLEW chain=base contract=0x8ea5… wallet=0x336a… error=revert:too_little_rece
 failed_tx=0x15f0… success_tx=0x389a… success_block=53152834. … Change: … NEXT_ACTION: …
 ```
 
-There are **12 real Mainnet memories** in namespace `clew`, from 12 real fail → success pairs on 12 distinct contracts (8 Base, 2 Ethereum, 2 Polygon). Job and blob ids are in `memories.json`. Each blob resolves on Walruscan Mainnet, but its content is SEAL-encrypted, so the explorer proves the write happened without exposing the memory text.
+There are **14 real Mainnet memories** in namespace `clew`, from 14 real fail → success pairs on 14 distinct contracts (8 Base, 2 Ethereum, 2 Polygon, 2 Sui). Job and blob ids are in `memories.json`. Each blob resolves on Walruscan Mainnet, but its content is SEAL-encrypted, so the explorer proves the write happened without exposing the memory text.
 
 ## How the memory changed the outcome
 
@@ -68,13 +70,14 @@ Clew's memory grows one confirmed pair at a time, and each pair changes what it 
 1. **First pass.** Discovery scanned recent Base, Ethereum and Polygon blocks through Tatum and found real wallets that failed and then succeeded on the same contract. Twelve of those pairs became Walrus Mainnet memories, each confirmed by `waitForRememberJob`.
 2. **Repeat failures.** Nine of those twelve wallets failed again later with a similar error. Recall has been run on Mainnet for three of them so far (all on Base), and for each the answer changed from "reverted" to the path that worked, as in the Base example above. The demo script now recalls all nine on its next run.
 3. **Correcting itself without rewriting history.** Reviewing the stored memories showed two weaknesses. Some memories gave a gas hint when the failure had not run out of gas, and one stored six full 32-byte calldata words. Walrus memories are never edited. Instead, recall now applies a gas gate when it reads a memory, and a corrected memory is written as a new revision that supersedes the old one in the ledger.
-4. **Knowing who it learned from.** A wallet classifier now tags every memory bot-like or human-like, so the examples Clew leads with are the ones a person is most likely to recognise.
-5. **Next: learning live.** A watcher (`npm run watch`) follows new blocks and answers fresh failures from remembered wallets as they happen. A scripted live demo on Base creates a fresh failure, retry, memory and recall on demand. Both are built and tested offline; neither has been run against Mainnet yet.
+4. **Knowing who it learned from.** A wallet classifier now tags every memory bot-like, human-like or (on Sui, which has no account nonce) unclassified, so the examples Clew leads with are the ones a person is most likely to recognise.
+5. **A second kind of chain.** On Sui, Clew read a slippage abort (`err_amount_out_slippage_check_failed`) on a DEX router through Tatum's GraphQL gateway, found the same sender's later success through the same router 441 checkpoints on, and wrote it to Walrus. When that sender failed again (`6mDBLQjL…xcvM`), recall returned the earlier success as the template and the failure reason ("used 3411613 of 6410000 gas, not out of gas"), so no gas hint, even though the retry had raised the gas price about fivefold. A second Sui memory is weaker: only the gas budget changed and the wallet retried within about a second, so it is almost certainly a bot.
+6. **Next: learning live.** A watcher (`npm run watch`) follows new blocks and answers fresh failures from remembered wallets as they happen. A scripted live demo on Base creates a fresh failure, retry, memory and recall on demand. Both are built and tested offline; neither has been run against Mainnet yet.
 
 ## Honest caveat
 
-Most wallets that fail and then succeed on the same contract within minutes are bots: routers, MEV searchers, relayers. Clew now says so per wallet. A small, documented heuristic tags each one bot-like or human-like from public behaviour: lifetime nonce, how fast the retry landed, other transactions in between, and how often the wallet hit the same contract. Of the 12 stored memories, 11 are bot-like (nonces up to 2.8 million, retries within seconds, up to 55 calls to one contract in about 5 minutes). One, on Ethereum, shows no automation signal. "Human-like" only means no signal was seen, never that a person is confirmed. So in the real data the change is often just a fresh quote, a new deadline, or a higher gas price, not a clever human fix. Clew doesn't claim to know *why* the retry worked. It reports exactly what differed, and it only gives a gas hint when the failed attempt actually ran out of gas. None of the 12 stored failures did (the highest used 78% of its limit), so for all of them Clew shows the revert reason instead, even where the retry happened to raise the gas limit or bid a higher price. It always hands back the prior successful transaction as a template. That part is useful whether the fix was a new quote or a new bid.
+Most wallets that fail and then succeed on the same contract within minutes are bots: routers, MEV searchers, relayers. Clew now says so per wallet. A small, documented heuristic tags each one bot-like or human-like from public behaviour: lifetime nonce, how fast the retry landed, other transactions in between, and how often the wallet hit the same contract. Of the 14 stored memories, 12 are bot-like (nonces up to 2.8 million, retries within seconds, up to 55 calls to one contract in about 5 minutes). One, on Ethereum, shows no automation signal. One, on Sui, is unclassified: Sui has no account nonce, so only retry latency can be checked, and that is not enough to rule automation out. "Human-like" only means no signal was seen, never that a person is confirmed. So in the real data the change is often just a fresh quote, a new deadline, or a higher gas price, not a clever human fix. Clew doesn't claim to know *why* the retry worked. It reports exactly what differed, and it only gives a gas hint when the failed attempt actually ran out of gas. None of the 14 stored failures did (the highest used 78% of its limit), so for all of them Clew shows the revert reason instead, even where the retry happened to raise the gas limit or bid a higher price. It always hands back the prior successful transaction as a template. That part is useful whether the fix was a new quote or a new bid.
 
 ## Try it
 
-See [`DEMO.md`](DEMO.md) for the two-minute walkthrough. Core is TypeScript in `src/`, with offline tests (`npm test`).
+See [`DEMO.md`](DEMO.md) for the 2 to 3 minute demo script. Core is TypeScript in `src/`, with offline tests (`npm test`).

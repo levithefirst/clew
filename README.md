@@ -24,7 +24,7 @@ Contract <addr> on <chain> failed with error <signature> (<detail, max 120 chars
 Change: gas used was <s> vs <f> on failure; gas limit <s> vs <f>; gas price <s> vs <f> wei; nonce <f> -> <s>; same function <sel>; calldata <f> -> <s> bytes; <m> arg word(s) changed (at most 3 shown, each clipped).
 NEXT_ACTION: reason: <detail> (used <f> of <limit> gas, not out of gas); re-encode calldata: arg word <i> = <new> (was <old>); …; template tx <hash>
 ```
-Memories written before this format (all 12 on Walrus today) omit the gas price, the sizes and the reason clause. Memory #1 (`0x15f0…` → `0x389a…`) also stored six unclipped 32-byte words. Walrus memories are never rewritten: a corrected version is a new write with `rev=2` and its own idempotency key (`chain:failed:success:r2`), linked in `memories.json` by `supersedes`. Recall and the site prefer the highest revision of a pair.
+EVM memories written before this format (all 12 on Walrus today) omit the gas price, the sizes and the reason clause. Memory #1 (`0x15f0…` → `0x389a…`) also stored six unclipped 32-byte words. Walrus memories are never rewritten: a corrected version is a new write with `rev=2` and its own idempotency key (`chain:failed:success:r2`), linked in `memories.json` by `supersedes`. Recall and the site prefer the highest revision of a pair.
 
 ## Setup
 
@@ -42,7 +42,7 @@ cp .env.example .env   # fill in, then: set -a; . ./.env; set +a
 | `TATUM_API_KEY` | Tatum API key (the free plan works; Clew throttles itself to ~3 req/s) |
 | `DEMO_PRIVATE_KEY` | optional, `npm run live-demo` only: a throwaway Base burner key (see Live demo) |
 
-Supported chains (Tatum gateways): `ethereum`, `base`, `polygon`, `arbitrum`, `optimism`, `bsc`. Sui is built but not yet verified (see below).
+Supported chains (Tatum gateways): `ethereum`, `base`, `polygon`, `arbitrum`, `optimism`, `bsc` (JSON-RPC), and `sui` (GraphQL, verified on Mainnet; see below).
 
 ## Commands
 
@@ -64,15 +64,15 @@ npm run classify                           # offline: tag each memory's wallet b
 
 The 2 to 3 minute video script with exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](BLOG.md).
 
-1. `npm test` (about 1 s, 26 tests) shows the logic offline.
+1. `npm test` (about 1 s, 31 tests) shows the logic offline.
 2. `npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 --without-memory` returns only the generic "reverted" message.
 3. The same command without the flag recalls the stored memory for wallet `0x336a…` on contract `0x8ea5…` and returns the earlier retry `0x389a…` with a copy-ready next action: the revert reason, then the calldata words to re-encode. No gas hint: that failure used 78% of its gas limit.
-4. `memories.json` lists the 12 Walrus Mainnet writes (job id + blob id + text). Each blob resolves at `https://walruscan.com/mainnet/blob/<blob_id>`; the content is SEAL-encrypted, so Walruscan shows that the blob exists, not its text.
+4. `memories.json` lists the 14 Walrus Mainnet writes (12 EVM, 2 Sui) (job id + blob id + text). Each blob resolves at `https://walruscan.com/mainnet/blob/<blob_id>`; the content is SEAL-encrypted, so Walruscan shows that the blob exists, not its text.
 
 ## What the demo used (all real Mainnet data, no fixtures)
 
 - `scripts/discover.ts` scanned recent blocks with Tatum `eth_getBlockReceipts` on Base (151 blocks), Ethereum (41), and Polygon (101), looking for real `fail → later success` sequences from the same wallet to the same contract. `scripts/pick.ts` then chose 12 pairs on distinct contracts (8 Base, 2 Ethereum, 2 Polygon). That pick predates the wallet classifier; the tags were added afterwards from the same data. 9 of those wallets failed **again** later with a similar error, so step 4 runs on real repeat failures. Candidate lists and picks are in `fixtures/`.
-- **12 Walrus Mainnet memories**, all from real pairs. Each write was confirmed by `waitForRememberJob` (`blob_id` recorded in `memories.json`).
+- **14 Walrus Mainnet memories** (12 EVM, 2 Sui), all from real pairs. Each write was confirmed by `waitForRememberJob` (`blob_id` recorded in `memories.json`).
 - Honest caveat: most wallets that fail and retry within minutes on-chain are bots (swap routers, MEV, relayers), so many of the "changes" are fresh quotes, deadlines, or a higher gas price. Clew reports exactly what differed. It doesn't claim to know why.
 
 ## Watcher
@@ -102,7 +102,7 @@ npm run watch -- base --record fixtures/watch-recorded.json   # capture the RPC 
   ```
 - **Tests:** `tests/watch.test.ts` replays `fixtures/watch-stream.json` (hand-built, marked synthetic) through the same code. It covers a reorg, a watched failure next to an unwatched one, recall, and resume.
 
-No live catch has been recorded yet. The watcher only reports failures from the 12 remembered wallet+contract pairs, so a catch needs one of those wallets to fail again while it runs.
+No live catch has been recorded yet. The watcher (EVM chains) only reports failures from the 12 remembered EVM wallet+contract pairs, so a catch needs one of those wallets to fail again while it runs.
 
 ## Live demo
 
@@ -143,20 +143,33 @@ LIVE DEMO base wallet <address> (key from DEMO_PRIVATE_KEY, not shown): <wei> we
 ```
 `tests/live.test.ts` runs the same flow offline against a fake Base chain with WETH9 behaviour, signing with Anvil's public dev key, and checks that the key never appears in the output. A real run has not been made yet.
 
-## Sui (built, not yet verified on Mainnet)
+## Sui (verified on Mainnet, 2026-10-31)
 
-`src/sui.ts` runs the same loop on Sui through Tatum's Sui gateway. That gateway serves **GraphQL only** (`POST https://sui-mainnet.gateway.tatum.io/graphql`, `x-api-key`, one operation per request), not `sui_*` JSON-RPC. A first JSON-RPC version failed with HTTP 404 on a real run and was replaced.
+`src/sui.ts` runs the same loop on Sui through Tatum's Sui gateway. Note: that gateway serves **GraphQL only** (`POST https://sui-mainnet.gateway.tatum.io/graphql`, `x-api-key`, one operation per request), not `sui_*` JSON-RPC. A first JSON-RPC version failed with HTTP 404 on a real run and was replaced.
+
+**What was verified on Sui Mainnet (2026-10-31, project keys):**
+- `npm run sui:check`: `SUI GATEWAY OK`. GraphQL reachable at checkpoint 340173364, 50 programmable transactions decoded (2 FAILURE), single-transaction query passed, and the retry search found a later SUCCESS.
+- Two real memories written to Walrus Mainnet (`memories.json`):
+
+| Failed | Retry | Error | Change | Wallet tag |
+|---|---|---|---|---|
+| `GXwW6feR…48Vj` | `ByGXz3iX…U6JV`, 441 checkpoints later | `moveabort:errors::err_amount_out_slippage_check_failed:1` on `0xde5d…9640::router` | gas price 3,410 → 17,038 MIST, budget 6,410,000 → 20,038,000; pure inputs identical | unclassified (no nonce on Sui; retried about 106 s later) |
+| `FzUf8HxE…oDYp` | `EthYTxV1…rTtw`, 3 checkpoints later | `moveabort:order_info::assert_execution:5` on `0xcaf6…ec3a::balance_manager` | gas budget only | bot-like (retried within about a second) |
+
+- Recall on a real later failure: `npm run sui -- recall 6mDBLQjL4Ld48683HjpZnV4xBQEZB5ymohxzxNaYxcvM` returned WITH MEMORY, prior success `ByGXz3iX…U6JV`, with the reason line "used 3411613 of 6410000 gas, not out of gas" (so no gas hint).
+
+The slippage pair is the useful one: a slippage abort on the router, then a later success from the same sender through the same router, and recall answered a real later failure from that sender. The `balance_manager` pair is weaker: only the gas budget changed, and the wallet retried within about a second, so it is almost certainly a bot. Neither wallet is claimed to be a person. Both memories were written before the input wording was tightened: their "inputs identical" means the Pure inputs were identical; object inputs are not compared. New memories say "pure inputs identical" and how many inputs are Pure.
 
 | EVM concept | Sui equivalent |
 |---|---|
 | wallet | sender |
 | contract | the called `package::module` that matches the abort location (else one in the same package, else the last Move call) |
 | block | checkpoint |
-| calldata words | `Pure` inputs (BCS bytes, shown as hex) |
+| calldata words | `Pure` inputs (BCS bytes, shown as hex); object inputs are not compared |
 | revert reason | `executionError`: `moveabort:<module>::<function>:<abortCode>`, where module and function are where the abort happened, which can differ from the functions the transaction called |
 
 - **Retry search:** one server-side filter, `transactions(filter: { sentAddress, function: "<package>::<module>", afterCheckpoint })`, paged with `first` and `after`. The first later `SUCCESS` that calls the same module is the retry. The `function` filter matches functions the transaction *called*, so filtering on the abort location returns nothing when that function was not a command.
-- **Gas gate:** `InsufficientGas` maps to `out-of-gas`, so the gate applies unchanged.
+- **Gas gate:** Sui reports out-of-gas as "Insufficient Gas"; it maps to `out-of-gas`, so the gate applies unchanged.
 - **Memories:** the same tags, recall path (`recallFor`) and rate limit as EVM memories.
 
 ```bash
@@ -167,7 +180,7 @@ npm run sui -- recall <failedDigest> --store ledger
 
 `sui:check` prints PASS or FAIL per step with the server's exact error, then `SUI GATEWAY OK` or `SUI GATEWAY NOT USABLE`. It looks at failures about 10 minutes old, so their retries can already exist. `--record` saves every request and response, so a real run can become a test fixture.
 
-All queries validate against Sui's published GraphQL schema (`crates/sui-indexer-alt-graphql/schema.graphql`). Tests parse two real responses recorded through Tatum on 2026-10-31 (`fixtures/sui-recorded-2026-10-31.json`); command lists, sender history and the record/recall flow are synthetic and labelled. **Status: not verified.** Clew does not claim Sui support until `sui:check` passes on Mainnet and a real pair has gone through record and recall.
+All queries validate against Sui's published GraphQL schema (`crates/sui-indexer-alt-graphql/schema.graphql`). Tests parse two real responses recorded through Tatum on 2026-10-31 (`fixtures/sui-recorded-2026-10-31.json`); command lists, sender history and the record/recall flow are synthetic and labelled. The real recall above is kept in `fixtures/sui-recall-2026-10-31.json`, and the site shows it. Checkpoint time for latency (about 0.24 s) is measured from two Suiscan timestamps.
 
 ## Wallet classifier
 
@@ -182,7 +195,7 @@ Most wallets that fail and retry within minutes are bots, so Clew labels each on
 
 No signal makes it **human-like**, which only means no automation signal was seen. It never means "a person": a slow, low-volume bot passes, and a power user running a script fails. Latency comes from block timestamps when the transactions are loaded live (`pick`), or from block count times average block time when only the memory text is available (`classify`, marked `~`). The repeat-call signal needs discovery data; the scan size per chain for the original candidates is in `fixtures/scans.json`.
 
-Current tags for the 12 memories (`npm run classify`): 11 bot-like, 1 human-like (Ethereum `0xd55c…`, `Expired`: 65 prior transactions, retried about 48 s later, 4 calls in about 8 minutes). `pick` ranks human-like wallets with a real repeat failure first, so the headline example comes from a human-like wallet when one is available.
+Current tags for the 14 memories (`npm run classify`): 12 bot-like, 1 human-like, 1 unclassified (Sui `GXwW…`: Sui has no account nonce, so only retry latency can be checked, and a wallet with no signal is left unclassified rather than called human-like). The human-like one is Ethereum `0xd55c…` (`Expired`: 65 prior transactions, retried about 48 s later, 4 calls in about 8 minutes). `pick` ranks human-like wallets with a real repeat failure first, so the headline example comes from a human-like wallet when one is available.
 
 ## Limits
 
