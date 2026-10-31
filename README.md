@@ -53,7 +53,7 @@ npm run discover -- base 150 300           # find real fail->success candidates 
 
 ## Two-minute demo
 
-Exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`docs/blog.md`](docs/blog.md).
+Exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](BLOG.md).
 
 1. `npm test` (about 1 s) shows the logic offline.
 2. `npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 --without-memory` returns only the generic "reverted" message.

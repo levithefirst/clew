@@ -68,4 +68,4 @@ Most wallets that fail and then succeed on the same contract within minutes are 
 
 ## Try it
 
-See [`DEMO.md`](../DEMO.md) for the two-minute walkthrough. Core is TypeScript in `src/`, with offline tests (`npm test`).
+See [`DEMO.md`](DEMO.md) for the two-minute walkthrough. Core is TypeScript in `src/`, with offline tests (`npm test`).
