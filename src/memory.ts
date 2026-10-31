@@ -22,7 +22,15 @@ function memwal(): MemWal {
   return client;
 }
 
-type Ledger = Record<string, { job_id?: string; blob_id: string; namespace: string; written_at: string; text: string }>;
+/** One ledger entry per Walrus write. `supersedes` links a corrected rewrite (key suffix :rN) to the key it replaces. */
+type Ledger = Record<string, { job_id?: string; blob_id: string; namespace: string; written_at: string; text: string; supersedes?: string }>;
+
+/** chain:failed:success:r3 -> chain:failed:success:r2; :r2 -> the original key. */
+export const supersededKey = (key: string): string | undefined => {
+  const m = key.match(/^(.*):r(\d+)$/);
+  if (!m) return undefined;
+  return Number(m[2]) > 2 ? `${m[1]}:r${Number(m[2]) - 1}` : m[1];
+};
 export const readLedger = (): Ledger => (existsSync(LEDGER) ? JSON.parse(readFileSync(LEDGER, "utf8")) : {});
 
 export const walrus: MemoryStore = {
@@ -32,7 +40,9 @@ export const walrus: MemoryStore = {
     const m = memwal();
     const accepted = await m.remember(text, { idempotencyKey: key });
     const done = await m.waitForRememberJob(accepted.job_id, { timeoutMs: 180_000, pollIntervalMs: 2_000 });
-    ledger[key] = { job_id: accepted.job_id, blob_id: done.blob_id, namespace: done.namespace, written_at: new Date().toISOString(), text };
+    const supersedes = supersededKey(key);
+    if (supersedes && !ledger[supersedes]) throw new Error(`${key} corrects ${supersedes}, which is not in the ledger`);
+    ledger[key] = { job_id: accepted.job_id, blob_id: done.blob_id, namespace: done.namespace, written_at: new Date().toISOString(), text, ...(supersedes && { supersedes }) };
     writeFileSync(LEDGER, JSON.stringify(ledger, null, 2) + "\n");
     return { job_id: accepted.job_id, blob_id: done.blob_id };
   },

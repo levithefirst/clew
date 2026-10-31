@@ -3,8 +3,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setRpc, decodeRevert } from "../src/tatum.ts";
 import { readFileSync } from "node:fs";
-import { errorSignature, similarError, diffAttempts, recordRetry, onFailure, parseNextAction, formatNextAction, gateGasHints, rememberedFailure, memoryKey, type Attempt } from "../src/clew.ts";
-import type { MemoryStore, Recalled } from "../src/memory.ts";
+import { errorSignature, similarError, diffAttempts, recordRetry, onFailure, parseNextAction, formatNextAction, gateGasHints, rememberedFailure, memoryKey, memoryText, type Attempt } from "../src/clew.ts";
+import { supersededKey, type MemoryStore, type Recalled } from "../src/memory.ts";
 
 const W = "0x" + "a".repeat(40), C = "0x" + "c".repeat(40), W2 = "0x" + "b".repeat(40), C2 = "0x" + "d".repeat(40), C3 = "0x" + "e".repeat(40);
 const word = (n: number) => n.toString(16).padStart(64, "0");
@@ -132,4 +132,23 @@ test("revisions: a corrected memory gets its own idempotency key and wins recall
   assert.equal(mem.length, before + 1);
   const hit = await onFailure("base", "0xf2", { store });
   assert.ok(hit.matched && hit.memoryBlobId === `blob${before + 1}`);
+});
+
+test("bounded memory: long calldata with full-width words stays short (memory #1 had 6 unclipped words)", () => {
+  const wide = (n: number) => "6ae07577" + n.toString(16).padStart(56, "0"); // 64 hex chars, no leading zeros to strip
+  const input = (k: number) => sel + Array.from({ length: 21 }, (_, i) => wide(i * 1000 + (i >= 15 ? k : 0))).join("");
+  const base = { chain: "base", wallet: W, contract: C, selector: sel, value: 0n, gasPrice: 1n, timestamp: 0, gasLimit: 246588, nonce: 1 } as const;
+  const f: Attempt = { ...base, hash: "0xf", status: "failure", input: input(1), gasUsed: 192148, block: 1, errorSig: "revert:too_little_received", errorDetail: "x".repeat(400) };
+  const s: Attempt = { ...base, hash: "0xs", status: "success", input: input(2), gasUsed: 176390, block: 7 };
+  const text = memoryText(f, s, diffAttempts(f, s));
+  assert.match(text, /calldata 676 -> 676 bytes; 6 arg word\(s\) changed/);
+  assert.ok(!/(?:arg \d+ |= |\(was |-> )0x[0-9a-f]{25,}/.test(text), "every calldata word is clipped");
+  assert.ok(text.includes("x".repeat(119) + "…") && !text.includes("x".repeat(121)), "error detail capped at 120 chars");
+  assert.ok(text.length < 1500, `length ${text.length}`);
+});
+
+test("ledger: a revision names the key it supersedes", () => {
+  assert.equal(supersededKey("base:0xf:0xs"), undefined);
+  assert.equal(supersededKey("base:0xf:0xs:r2"), "base:0xf:0xs");
+  assert.equal(supersededKey("base:0xf:0xs:r3"), "base:0xf:0xs:r2");
 });

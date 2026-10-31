@@ -17,13 +17,14 @@ Clew handles one loop only: **failure → successful retry → next failure**.
 
 **Error signature:** `revert:<normalized reason>` | `panic:<code>` | `custom:<selector>` | `out-of-gas:<fn selector>` | `<fn selector>:reverted`. "Similar" means an exact match, or a token-Jaccard score of at least 0.6 between two revert strings.
 
-**Memory format** (tags first so recall and the strict filter both work):
+**Memory format** (tags first so recall and the strict filter both work; the diff is bounded):
 ```
-CLEW chain=base contract=0x8ea5… wallet=0x336a… error=revert:too_little_received selector=0x708909ad failed_tx=0x15f0… success_tx=0x389a… success_block=53152834.
-Contract 0x8ea5… on base failed with error … for wallet 0x336a…. Successful retry in tx 0x389a… at block 53152834, 6 blocks later.
-Change: gas used was 176390 vs 192148 on failure; gas limit …; nonce 58508 -> 58509; same function 0x708909ad; calldata 4 arg word(s) changed (arg 4 … -> …).
-NEXT_ACTION: re-encode calldata: arg word 4 = 0x40345a5d65e9884189 (was 0x4034297ede533478d4); …; template tx 0x389a…
+CLEW chain=<chain> contract=<addr> wallet=<addr> error=<signature> selector=<4 bytes> failed_tx=<hash> success_tx=<hash> success_block=<n>[ rev=<n>].
+Contract <addr> on <chain> failed with error <signature> (<detail, max 120 chars>) for wallet <addr>. Successful retry in tx <hash> at block <n>, <k> blocks later.
+Change: gas used was <s> vs <f> on failure; gas limit <s> vs <f>; gas price <s> vs <f> wei; nonce <f> -> <s>; same function <sel>; calldata <f> -> <s> bytes; <m> arg word(s) changed (at most 3 shown, each clipped).
+NEXT_ACTION: reason: <detail> (used <f> of <limit> gas, not out of gas); re-encode calldata: arg word <i> = <new> (was <old>); …; template tx <hash>
 ```
+Memories written before this format (all 12 on Walrus today) omit the gas price, the sizes and the reason clause. Memory #1 (`0x15f0…` → `0x389a…`) also stored six unclipped 32-byte words. Walrus memories are never rewritten: a corrected version is a new write with `rev=2` and its own idempotency key (`chain:failed:success:r2`), linked in `memories.json` by `supersedes`. Recall and the site prefer the highest revision of a pair.
 
 ## Setup
 
@@ -50,6 +51,7 @@ npm run demo                               # full Mainnet loop -> demo-output.tx
 npm run check -- base <failedTxHash>       # step 4 for any failure: prior path + next action, or generic
                                            #   --without-memory (empty namespace), --json (raw result)
 npm run record -- base <failedTx> [okTx]   # steps 1-3: watch for the retry if okTx is omitted, then write memory
+                                           #   --dry-run (print the memory text, write nothing), --rev N (corrected rewrite)
 npm run discover -- base 150 300           # find real fail->success candidates (scan 150 blocks, 300-block window)
 ```
 

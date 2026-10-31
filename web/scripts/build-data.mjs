@@ -9,6 +9,10 @@ const memories = JSON.parse(readFileSync(join(root, "memories.json"), "utf8"));
 const pairs = JSON.parse(readFileSync(join(root, "fixtures", "pairs.json"), "utf8"));
 const demo = readFileSync(join(root, "demo-output.txt"), "utf8");
 
+// Display copy only: early runs joined clauses with " \u2014 "; the core now prints ". Check ..." and "; ".
+// Memory `text` stays verbatim as stored on Walrus.
+const undash = (s) => s?.replace(/ \u2014 check/g, ". Check").replace(/ \u2014 /g, "; ") ?? null;
+
 const kv = (text, key) => text.match(new RegExp(`\\b${key}=(\\S+)`))?.[1] ?? null;
 const num = (s) => (s == null ? null : Number(s));
 
@@ -18,7 +22,7 @@ function parseChange(change) {
   const nonce = change.match(/nonce (\d+) -> (\d+)/);
   const same = change.match(/same function (0x[0-9a-f]+)/);
   const fn = change.match(/function (0x[0-9a-f]+) -> (0x[0-9a-f]+)/);
-  const count = change.match(/calldata (\d+) arg word\(s\) changed/);
+  const count = change.match(/(\d+) arg word\(s\) changed/);
   const argsBlock = change.match(/changed \((.*)\)\s*$/s)?.[1] ?? "";
   const args = [...argsBlock.matchAll(/arg (\d+) (\S+) -> (\S+?)(?=,|$)/g)].map((m) => ({ index: Number(m[1]), from: m[2], to: m[3] }));
   return {
@@ -31,7 +35,10 @@ function parseChange(change) {
   };
 }
 
-const out = Object.entries(memories).map(([key, m]) => {
+// A corrected rewrite (rev=N, ledger key suffix :rN) replaces the entry it supersedes on the site;
+// the superseded memory stays on Walrus and in memories.json.
+const superseded = new Set(Object.values(memories).map((m) => m.supersedes).filter(Boolean));
+const out = Object.entries(memories).filter(([key]) => !superseded.has(key)).map(([key, m]) => {
   const t = m.text;
   const chain = kv(t, "chain");
   const failed_tx = kv(t, "failed_tx");
@@ -39,6 +46,8 @@ const out = Object.entries(memories).map(([key, m]) => {
   const change = t.match(/Change: (.*?)\. NEXT_ACTION:/s)?.[1] ?? "";
   return {
     key,
+    rev: num(kv(t, "rev")) ?? 1,
+    supersedes: m.supersedes ?? null,
     chain,
     contract: kv(t, "contract"),
     wallet: kv(t, "wallet"),
@@ -55,7 +64,7 @@ const out = Object.entries(memories).map(([key, m]) => {
     namespace: m.namespace,
     written_at: m.written_at,
     diff: parseChange(change),
-    next_action: t.match(/NEXT_ACTION: (.*)$/s)?.[1]?.trim() ?? null,
+    next_action: undash(t.match(/NEXT_ACTION: (.*)$/s)?.[1]?.trim()),
     text: t,
   };
 });
@@ -65,13 +74,13 @@ const recalls = [];
 const re = /new failure (\w+) (0x[0-9a-f]+)\n\s+error (\S+)\n\s+WITHOUT memory: (.*)\n\s+WITH memory\s+: prior success (0x[0-9a-f]+) \(block (\d+), blob (\S+)\)\n\s+change: (.*)\n\s+NEXT ACTION: (.*)/g;
 for (const m of demo.matchAll(re)) {
   recalls.push({
-    chain: m[1], failure_tx: m[2], error: m[3], without_memory: m[4].trim(),
-    with_memory: { prior_success: m[5], block: Number(m[6]), blob_id: m[7], change: m[8].trim(), next_action: m[9].trim() },
+    chain: m[1], failure_tx: m[2], error: m[3], without_memory: undash(m[4].trim()),
+    with_memory: { prior_success: m[5], block: Number(m[6]), blob_id: m[7], change: m[8].trim(), next_action: undash(m[9].trim()) },
     memory_key: out.find((o) => o.success_tx === m[5])?.key ?? null,
   });
 }
 const cf = demo.match(/counterfactual: other wallet (0x[0-9a-f]+) failing on remembered contract (0x[0-9a-f]+)\n\s+-> (.*)/);
-const counterfactual = cf && { wallet: cf[1], contract: cf[2], result: cf[3].trim() };
+const counterfactual = cf && { wallet: cf[1], contract: cf[2], result: undash(cf[3].trim()) };
 
 const chains = [...new Set(out.map((o) => o.chain))];
 const stats = {
