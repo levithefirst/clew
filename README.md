@@ -1,6 +1,6 @@
 # Clew
 
-When a transaction fails, Clew reads the receipt and revert through **Tatum RPC**. If the same wallet then sends a successful retry to the same contract, Clew diffs the two attempts and saves what changed to **Walrus Memory (Mainnet)**. The next time that wallet fails on that contract with a similar error, Clew recalls the memory and returns the **specific path that worked before** (which calldata words, gas limit, gas price, or function changed, plus a template tx). Without the memory, all it can say is "reverted".
+When a transaction fails, Clew reads the receipt and revert through **Tatum RPC**. If the same wallet then sends a successful retry to the same contract, Clew diffs the two attempts and saves what changed to **Walrus Memory (Mainnet)**. The next time that wallet fails on that contract with a similar error, Clew recalls the memory and returns the **specific path that worked before** (which calldata words or function changed, plus a template tx; a gas hint only when the failure ran out of gas). Without the memory, all it can say is "reverted".
 
 Clew handles one loop only: **failure → successful retry → next failure**.
 
@@ -11,7 +11,9 @@ Clew handles one loop only: **failure → successful retry → next failure**.
 | 1. Ingest failure | `recordFailure(chain, hash)` in `src/clew.ts` | Tatum `eth_getTransactionReceipt` (status `0x0`) + `eth_getTransactionByHash` (input, gas, nonce) + `eth_getBlockByNumber` (timestamp). Revert from `debug_traceTransaction` (callTracer), falling back to an `eth_call` replay at `block-1`. Decodes `Error(string)` `0x08c379a0`, `Panic` `0x4e487b71`, and custom error selectors. |
 | 2. Find the retry | `watchForRetry(failure, 10min)` | Polls Tatum `eth_getBlockReceipts` after the failed block for a status `0x1` tx from the same wallet to the same contract. |
 | 3. Remember | `recordRetry(chain, failed, success)` → `src/memory.ts` | Diffs gas used, gas limit, gas price, nonce, value, function selector, and each differing 32-byte calldata word. Writes a factual memory with `memwal.remember()` → `waitForRememberJob()` to namespace `clew` on `https://relayer.memory.walrus.xyz`. |
-| 4. Next failure | `onFailure(chain, hash)` | Ingests the new failure, runs `memwal.recall()`, then keeps only memories with an exact `chain` + `contract` + `wallet` match and a similar error signature. Returns `{priorPath, nextAction, suggestion}`: the stored `NEXT_ACTION` parsed into calldata changes + gas floors, and a copy-ready text that reports gas as what the retry did, not as the cause. Or a generic message if nothing matches. |
+| 4. Next failure | `onFailure(chain, hash)` | Ingests the new failure, runs `memwal.recall()`, then keeps only memories with an exact `chain` + `contract` + `wallet` match and a similar error signature. Returns `{priorPath, nextAction, suggestion}`: the stored `NEXT_ACTION` parsed into calldata changes, with the out-of-gas gate applied (below), as copy-ready text. Or a generic message if nothing matches. |
+
+**Gas gate:** a gas hint is emitted only when the failed attempt ran out of gas (error signature `out-of-gas:*`, or gas used at least 98% of the limit). Otherwise the next action starts with the revert reason, and gas price stays in the factual "Change" record. The gate is applied again at recall time (`gateGasHints`), so memories written before it existed (5 of the 12 carry a gas hint; none of the 12 failures ran out of gas) are corrected when read, without rewriting Walrus.
 
 **Error signature:** `revert:<normalized reason>` | `panic:<code>` | `custom:<selector>` | `out-of-gas:<fn selector>` | `<fn selector>:reverted`. "Similar" means an exact match, or a token-Jaccard score of at least 0.6 between two revert strings.
 
@@ -57,7 +59,7 @@ Exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](
 
 1. `npm test` (about 1 s) shows the logic offline.
 2. `npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 --without-memory` returns only the generic "reverted" message.
-3. The same command without the flag recalls the stored memory for wallet `0x336a…` on contract `0x8ea5…` and returns the earlier retry `0x389a…` with a copy-ready next action: the calldata words to re-encode, then the gas price the retry bid as a floor to consider (not as the proven cause).
+3. The same command without the flag recalls the stored memory for wallet `0x336a…` on contract `0x8ea5…` and returns the earlier retry `0x389a…` with a copy-ready next action: the revert reason, then the calldata words to re-encode. No gas hint: that failure used 78% of its gas limit.
 4. `memories.json` lists the 12 Walrus Mainnet writes (job id + blob id + text).
 
 ## What the demo used (all real Mainnet data, no fixtures)

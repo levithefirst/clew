@@ -1,6 +1,6 @@
 import { GitHubIcon } from "@/components/brand-icons";
 import { Hash } from "@/components/hash";
-import { HERO, CHAIN_LABEL, txUrl, blobUrl, explorerName } from "@/lib/data";
+import { HERO, CHAIN_LABEL, txUrl, blobUrl, explorerName, nextActionOf } from "@/lib/data";
 import { adviceLines } from "@/lib/advice";
 import { SITE } from "@/lib/site";
 import { short } from "@/lib/utils";
@@ -37,7 +37,8 @@ function HeroThread() {
 
 export function Hero() {
   const { recall, memory } = HERO;
-  const lines = adviceLines(recall.with_memory.next_action, 3);
+  const action = nextActionOf(memory);
+  const lines = action ? adviceLines(action, 3) : [];
   return (
     <section className="relative isolate overflow-hidden">
       <HeroThread />
@@ -91,14 +92,6 @@ export function Hero() {
                   <span className="min-w-0 break-words">{l}</span>
                 </li>
               ))}
-              {memory.diff.gasLimit && (
-                <li className="flex gap-2">
-                  <span className="text-brand" aria-hidden>→</span>
-                  <span>
-                    retry also used gas limit {memory.diff.gasLimit.success.toLocaleString("en-US")} <span className="text-ink-4">(failed with {memory.diff.gasLimit.failed.toLocaleString("en-US")})</span>
-                  </span>
-                </li>
-              )}
             </ul>
             <p className="mt-4 flex flex-wrap items-center gap-x-2 text-label text-ink-4">
               Recalled from Walrus blob

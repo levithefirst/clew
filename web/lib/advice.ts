@@ -1,7 +1,8 @@
 // Turn the stored NEXT_ACTION string into readable lines and a copy-ready block (pure string parsing of real data).
-// Mirrors parseNextAction/formatNextAction in ../src/clew.ts. Gas is reported as what the retry did, not as the cause.
+// Mirrors parseNextAction/gateGasHints/formatNextAction in ../src/clew.ts: a gas hint is shown only for out-of-gas failures.
 
 export interface NextAction {
+  reason?: string;
   calldata: { index: number; to: string; from: string }[];
   moreWords: number;
   callInstead?: { to: string; from: string };
@@ -12,8 +13,18 @@ export interface NextAction {
   templateTx?: string;
 }
 
+/** What the remembered failure looked like: enough to decide whether a gas hint is honest. */
+export interface FailureFacts {
+  errorSig?: string | null;
+  errorDetail?: string | null;
+  gasUsed?: number | null;
+  gasLimit?: number | null;
+}
+
 export function parseNextAction(text: string): NextAction {
   const a: NextAction = { calldata: [], moreWords: 0 };
+  const why = text.match(/(?:^|; )reason: (.*?) \(used \d+ of \d+ gas, not out of gas\)/);
+  if (why) a.reason = why[1];
   for (const m of text.matchAll(/arg word (\d+) = (\S+) \(was (\S+?)\)/g)) a.calldata.push({ index: Number(m[1]), to: m[2], from: m[3] });
   const more = text.match(/\+(\d+) more words differ/);
   if (more) a.moreWords = Number(more[1]);
@@ -31,10 +42,21 @@ export function parseNextAction(text: string): NextAction {
   return a;
 }
 
+export const isOutOfGas = (f: FailureFacts) =>
+  Boolean(f.errorSig?.startsWith("out-of-gas")) || (!!f.gasLimit && (f.gasUsed ?? 0) >= f.gasLimit * 0.98);
+
+/** Gas hints survive only if the remembered failure ran out of gas; otherwise the failure reason replaces them. */
+export function gateGasHints(a: NextAction, f: FailureFacts): NextAction {
+  if (isOutOfGas(f)) return { ...a, gasPrice: undefined };
+  const why = `${f.errorDetail ?? "reverted, no reason"} (used ${f.gasUsed ?? "?"} of ${f.gasLimit ?? "?"} gas, not out of gas)`;
+  return { ...a, gasLimit: undefined, gasPrice: undefined, reason: a.reason ?? why };
+}
+
 /** Plain-text block for the clipboard: full values, no truncation. */
 export function formatNextAction(a: NextAction): string {
   const out: string[] = [];
   if (a.templateTx) out.push(`Prior successful retry (template): ${a.templateTx}`);
+  if (a.reason) out.push(`- Failure reason: ${a.reason}.`);
   if (a.callInstead) out.push(`- Call ${a.callInstead.to} instead of ${a.callInstead.from}.`);
   if (a.value) out.push(`- Send value ${a.value.to} wei (failed with ${a.value.from}).`);
   if (a.calldata.length) {
@@ -42,29 +64,24 @@ export function formatNextAction(a: NextAction): string {
     for (const c of a.calldata) out.push(`    arg word ${c.index} = ${c.to} (was ${c.from})`);
     if (a.moreWords) out.push(`    +${a.moreWords} more word${a.moreWords === 1 ? " differs; copy it" : "s differ; copy them"} from the template tx`);
   }
-  if (a.gasLimit) out.push(`- Gas limit: the retry used ${a.gasLimit.floor} (failed with ${a.gasLimit.failed}). Consider >= ${a.gasLimit.floor}.`);
-  if (a.gasPrice) out.push(`- Gas price: the retry bid ${a.gasPrice.floor} wei (failed at ${a.gasPrice.failed}). Consider bidding >= ${a.gasPrice.floor} wei.`);
-  if (a.gasLimit || a.gasPrice) out.push(`  Gas differed between the attempts; that does not prove it caused the revert.`);
+  if (a.gasLimit) out.push(`- Out of gas: the failed attempt hit its limit of ${a.gasLimit.failed}; the retry used a limit of ${a.gasLimit.floor}. Consider >= ${a.gasLimit.floor}.`);
   if (a.resubmit) out.push(`- Calldata and gas were identical; the retry landed ${a.resubmit} later. State or timing likely changed, so resubmitting may be enough.`);
   return out.join("\n");
 }
 
 const n = (x: string | number) => Number(x).toLocaleString("en-US");
 
-/** Short display lines. Calldata/function first, gas last and qualified. */
-export function adviceLines(nextAction: string, max = 4): string[] {
-  const a = parseNextAction(nextAction);
+/** Short display lines: reason first, then what to change; gas only for out-of-gas failures. */
+export function adviceLines(a: NextAction, max = 4): string[] {
   const out: string[] = [];
+  if (a.reason) out.push(`reason: ${a.reason}`);
   if (a.callInstead) out.push(`call ${a.callInstead.to} instead of ${a.callInstead.from}`);
   if (a.value) out.push(`send value ${n(a.value.to)} wei (failed with ${n(a.value.from)})`);
   for (const c of a.calldata) out.push(`re-encode arg ${c.index} → ${clip(c.to)}`);
   if (a.moreWords) out.push(`+${a.moreWords} more calldata word${a.moreWords === 1 ? "" : "s"}; rebuild params like the retry`);
   if (a.resubmit) out.push(`same calldata and gas; retry landed ${a.resubmit} later`);
-  const gas: string[] = [];
-  if (a.gasLimit) gas.push(`retry used gas limit ${n(a.gasLimit.floor)} (failed with ${n(a.gasLimit.failed)}); consider ≥ that`);
-  if (a.gasPrice) gas.push(`retry bid ${n(a.gasPrice.floor)} wei gas (failed at ${n(a.gasPrice.failed)}); consider ≥ that`);
-  // Keep gas visible even when calldata lines fill the budget.
-  return [...out.slice(0, Math.max(0, max - gas.length)), ...gas].slice(0, max);
+  if (a.gasLimit) out.push(`out of gas at ${n(a.gasLimit.failed)}; retry used a limit of ${n(a.gasLimit.floor)}`);
+  return out.slice(0, max);
 }
 
 export function clip(hex: string, n = 20) {

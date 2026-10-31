@@ -1,4 +1,5 @@
 import raw from "@/data/clew.json";
+import { gateGasHints, parseNextAction, type NextAction } from "@/lib/advice";
 
 // Everything here is derived from the core's real artifacts (memories.json, demo-output.txt, fixtures/pairs.json)
 // by scripts/build-data.mjs. Nothing is fabricated or fetched at runtime.
@@ -76,3 +77,14 @@ export const HERO = (() => {
   const m = DATA.memories.find((x) => x.key === r.memory_key)!;
   return { recall: r, memory: m };
 })();
+
+/** A memory's next action as recall returns it: parsed from the stored text, with the out-of-gas gate applied. */
+export function nextActionOf(m: Memory): NextAction | null {
+  if (!m.next_action) return null;
+  return gateGasHints(parseNextAction(m.next_action), {
+    errorSig: m.error,
+    errorDetail: m.error_detail,
+    gasUsed: m.diff.gasUsed?.failed,
+    gasLimit: m.diff.gasLimit?.failed,
+  });
+}

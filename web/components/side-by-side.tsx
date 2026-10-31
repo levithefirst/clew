@@ -1,13 +1,14 @@
 import { Reveal } from "@/components/reveal";
 import { Hash } from "@/components/hash";
 import { NextAction } from "@/components/next-action";
-import { HERO, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName } from "@/lib/data";
+import { HERO, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, nextActionOf } from "@/lib/data";
 import { short } from "@/lib/utils";
 
 /** The same real Base failure, answered twice: empty namespace vs. the memory recalled from Walrus. */
 export function SideBySide() {
   const { recall, memory } = HERO;
   const exp = explorerName[recall.chain];
+  const action = nextActionOf(memory);
   return (
     <section id="same-failure" aria-labelledby="same-failure-h" className="scroll-mt-20 border-t">
       <div className="mx-auto max-w-[72rem] px-5 py-24 sm:px-8 sm:py-28 lg:px-12">
@@ -51,7 +52,7 @@ export function SideBySide() {
               <Hash value={recall.with_memory.prior_success} href={txUrl(recall.chain, recall.with_memory.prior_success)} label="prior successful retry" linkLabel={exp} className="text-ink" />
               <span className="num text-label text-ink-4">block {recall.with_memory.block.toLocaleString("en-US")}</span>
             </p>
-            <NextAction nextAction={recall.with_memory.next_action} className="mt-4" />
+            {action && <NextAction action={action} className="mt-4" />}
             <p className="mt-4 flex flex-wrap items-center gap-x-2 text-label text-ink-4">
               Recalled from Walrus blob
               <a href={blobUrl(recall.with_memory.blob_id)} target="_blank" rel="noreferrer" className="font-mono text-ink-3 hover:text-brand" title={recall.with_memory.blob_id}>

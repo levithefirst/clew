@@ -50,14 +50,15 @@ WITH MEMORY  (Walrus blob B57Lqac7DaDkXiXwNGHJML0S5Fo1EGOm9CMHmcOJOQc)
 
 NEXT ACTION
   Prior successful retry (template): 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03
+  - Failure reason: Too little received (used <gasUsed> of <gasLimit> gas, not out of gas).
   - Re-encode calldata like the retry:
       arg word 4 = 0x40345a5d65e9884189 (was 0x4034297ede533478d4)
       arg word 15 = 0x6ae0758300000000000000000000000000000000000000000000000000000000 (was 0x6ae0757700000000000000000000000000000000000000000000000000000000)
       arg word 16 = 0x5a772e0000000000000000000000000000000000000000000000040345a5d65 (was 0x5a772e000000000000000000000000000000000000000000000004034297ede)
       +1 more word differs; copy it from the template tx
-  - Gas price: the retry bid 9532143 wei (failed at 5916993). Consider bidding >= 9532143 wei.
-    Gas differed between the attempts; that does not prove it caused the revert.
 ```
+
+`<gasUsed>` and `<gasLimit>` are read live from the new failure `0xd72b…4bb6`; fill them in from the first real run. The stored memory also recorded a higher gas price on the retry, but that failure did not run out of gas, so Clew shows the revert reason instead of a gas hint.
 
 Add `--json` to either command for the raw result (includes the structured `nextAction`).
 

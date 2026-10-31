@@ -51,20 +51,19 @@ A real Base failure: tx `0xd72b…4bb6` from wallet `0x336a…811d` to contract 
 
 ```
 Prior successful retry (template): 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03
+- Failure reason: Too little received (not out of gas).
 - Re-encode calldata like the retry:
     arg word 4 = 0x40345a5d65e9884189 (was 0x4034297ede533478d4)
     arg word 15 = 0x6ae07583… (was 0x6ae07577…)
     arg word 16 = 0x5a772e…40345a5d65 (was 0x5a772e…4034297ede)
     +1 more word differs; copy it from the template tx
-- Gas price: the retry bid 9532143 wei (failed at 5916993). Consider bidding >= 9532143 wei.
-  Gas differed between the attempts; that does not prove it caused the revert.
 ```
 
 The first answer gives you nothing to act on. The second gives you a known-good transaction to copy and the exact calldata words that differed. On the site, the same block has a **Copy suggestion** button that puts the full values on the clipboard.
 
 ## Honest caveat
 
-Most wallets that fail and then succeed on the same contract within minutes are bots: routers, MEV searchers, relayers. So in the real data the change is often just a fresh quote, a new deadline, or a higher gas price, not a clever human fix. Clew doesn't claim to know *why* the retry worked. It reports exactly what differed, labels gas as "what the retry did" rather than the cause, and always hands back the prior successful transaction as a template. That part is useful whether the fix was a new quote or a new bid.
+Most wallets that fail and then succeed on the same contract within minutes are bots: routers, MEV searchers, relayers. So in the real data the change is often just a fresh quote, a new deadline, or a higher gas price, not a clever human fix. Clew doesn't claim to know *why* the retry worked. It reports exactly what differed, and it only gives a gas hint when the failed attempt actually ran out of gas. None of the 12 stored failures did (the highest used 78% of its limit), so for all of them Clew shows the revert reason instead, even where the retry happened to raise the gas limit or bid a higher price. It always hands back the prior successful transaction as a template. That part is useful whether the fix was a new quote or a new bid.
 
 ## Try it
 

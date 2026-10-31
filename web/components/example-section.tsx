@@ -39,7 +39,7 @@ export function ExampleSection() {
         </Reveal>
 
         <p className="mt-6 max-w-[48rem] text-small text-ink-4 text-pretty">
-          Honest note: most wallets that fail and retry within minutes are bots, so “what changed” is often a fresh quote or a higher gas price rather than a human fix. Gas lines say what the retry used, as a floor to consider, not as the proven cause. Clew records what actually differed and lets you decide.
+          Honest note: most wallets that fail and retry within minutes are bots, so “what changed” is often a fresh quote or a higher gas price rather than a human fix. Clew shows a gas hint only when the failed attempt actually ran out of gas; otherwise it shows the revert reason. Clew records what actually differed and lets you decide.
         </p>
       </div>
     </section>

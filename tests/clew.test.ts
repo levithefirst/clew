@@ -3,10 +3,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setRpc, decodeRevert } from "../src/tatum.ts";
 import { readFileSync } from "node:fs";
-import { errorSignature, similarError, diffAttempts, recordRetry, onFailure, parseNextAction, formatNextAction, type Attempt } from "../src/clew.ts";
+import { errorSignature, similarError, diffAttempts, recordRetry, onFailure, parseNextAction, formatNextAction, gateGasHints, rememberedFailure, memoryKey, type Attempt } from "../src/clew.ts";
 import type { MemoryStore, Recalled } from "../src/memory.ts";
 
-const W = "0x" + "a".repeat(40), C = "0x" + "c".repeat(40), W2 = "0x" + "b".repeat(40);
+const W = "0x" + "a".repeat(40), C = "0x" + "c".repeat(40), W2 = "0x" + "b".repeat(40), C2 = "0x" + "d".repeat(40), C3 = "0x" + "e".repeat(40);
 const word = (n: number) => n.toString(16).padStart(64, "0");
 const errStr = (s: string) => "0x08c379a0" + word(32) + word(s.length) + Buffer.from(s).toString("hex").padEnd(64, "0");
 const sel = "0x38ed1739";
@@ -15,15 +15,21 @@ const txs: Record<string, any> = {
   "0xs1": { from: W, to: C, status: "0x1", input: sel + word(1000) + word(950), gas: 200000, used: 160000, nonce: 8, block: 103 },
   "0xf2": { from: W, to: C, status: "0x0", input: sel + word(2000) + word(1990), gas: 200000, used: 150000, nonce: 9, block: 200, out: errStr("Too little received") },
   "0xf3": { from: W2, to: C, status: "0x0", input: sel + word(1) + word(1), gas: 200000, used: 150000, nonce: 1, block: 201, out: errStr("Too little received") },
+  // Out of gas: burned the whole limit, no revert data; the retry raised the limit.
+  "0xf4": { from: W, to: C2, status: "0x0", input: sel + word(5), gas: 100000, used: 100000, nonce: 20, block: 300, out: "0x", err: "out of gas" },
+  "0xs4": { from: W, to: C2, status: "0x1", input: sel + word(5), gas: 250000, used: 180000, nonce: 21, block: 302 },
+  // A revert retried with a much higher gas limit and price: gas changed, but gas was not the cause.
+  "0xf5": { from: W, to: C3, status: "0x0", input: sel + word(7), gas: 100000, used: 30000, nonce: 30, block: 400, out: errStr("Expired") },
+  "0xs5": { from: W, to: C3, status: "0x1", input: sel + word(8), gas: 300000, used: 60000, nonce: 31, block: 401, price: "0x77359400" },
 };
 const hex = (n: number) => "0x" + n.toString(16);
 setRpc(async (_c, method, params: any[]) => {
   const t = txs[params[0]];
   switch (method) {
-    case "eth_getTransactionReceipt": return { from: t.from, to: t.to, status: t.status, gasUsed: hex(t.used), blockNumber: hex(t.block), effectiveGasPrice: "0x3b9aca00" };
+    case "eth_getTransactionReceipt": return { from: t.from, to: t.to, status: t.status, gasUsed: hex(t.used), blockNumber: hex(t.block), effectiveGasPrice: t.price ?? "0x3b9aca00" };
     case "eth_getTransactionByHash": return { from: t.from, to: t.to, input: t.input, gas: hex(t.gas), nonce: hex(t.nonce), value: "0x0", blockNumber: hex(t.block), gasPrice: "0x3b9aca00" };
     case "eth_getBlockByNumber": return { timestamp: hex(1_700_000_000 + parseInt(params[0], 16) * 2) };
-    case "debug_traceTransaction": return { output: t.out, error: "execution reverted" };
+    case "debug_traceTransaction": return { output: t.out, error: t.err ?? "execution reverted" };
   }
   throw new Error("unmocked " + method);
 });
@@ -70,20 +76,60 @@ test("loop: retry is remembered, next similar failure gets the prior path; other
   assert.equal((await onFailure("base", "0xf2", { store, namespace: "empty" })).matched, false); // no memory
 });
 
-test("next action: real stored Base memory parses into calldata + qualified gas floor", () => {
-  const ledger = JSON.parse(readFileSync("memories.json", "utf8"));
-  const text: string = Object.values<any>(ledger).find((m) => m.text.includes("success_tx=0x389a50464dd3")).text;
+const realMemory = (needle: string): string =>
+  Object.values<any>(JSON.parse(readFileSync("memories.json", "utf8"))).find((m) => m.text.includes(needle)).text;
+
+test("gas gate: an out-of-gas failure keeps its gas-limit hint", async () => {
+  const r = await recordRetry("base", "0xf4", "0xs4", store);
+  assert.equal(r.failure.errorSig, `out-of-gas:${sel}`);
+  assert.match(r.text, /NEXT_ACTION: out of gas: retry used gas limit 250000 \(failed with limit 100000/);
+  assert.doesNotMatch(r.text, /reason: /);
+  const a = gateGasHints(parseNextAction(r.text.split("NEXT_ACTION: ")[1]), rememberedFailure(r.text));
+  assert.deepEqual(a.gasLimit, { floor: 250000, failed: 100000 });
+  assert.match(formatNextAction(a), /Out of gas: the failed attempt hit its limit of 100000/);
+});
+
+test("gas gate: a revert retried with more gas gets the reason, not a gas hint", async () => {
+  const r = await recordRetry("base", "0xf5", "0xs5", store);
+  const next = r.text.split("NEXT_ACTION: ")[1];
+  assert.match(next, /^reason: Expired \(used 30000 of 100000 gas, not out of gas\)/);
+  assert.doesNotMatch(next, /gas limit|retry bid|gas price/);
+  assert.match(r.text, /gas price 2000000000 vs 1000000000 wei/); // still recorded as a fact in Change
+  assert.match(r.text, /calldata 36 -> 36 bytes/);
+});
+
+test("gas gate: real stored memory 0x3b9e41d7 (34296 of 626972 gas) loses its stored gas hint at recall", () => {
+  const text = realMemory("error=custom:0x3b9e41d7");
+  const stored = parseNextAction(text.split("NEXT_ACTION: ")[1]);
+  assert.deepEqual(stored.gasLimit, { floor: 1044916, failed: 626972 }); // what was written before the gate
+  const gated = gateGasHints(stored, rememberedFailure(text));
+  assert.equal(gated.gasLimit, undefined);
+  assert.equal(gated.reason, "custom error 0x3b9e41d7 (used 34296 of 626972 gas, not out of gas)");
+  assert.doesNotMatch(formatNextAction(gated), /- Out of gas:|gas limit/);
+});
+
+test("next action: real stored Base memory parses into calldata; recall drops its gas-price hint", () => {
+  const text = realMemory("success_tx=0x389a50464dd3");
   const a = parseNextAction(text.match(/NEXT_ACTION: (.*)$/)![1]);
   assert.deepEqual(a.calldata.map((c) => c.index), [4, 15, 16]);
   assert.equal(a.calldata[0].to, "0x40345a5d65e9884189");
   assert.equal(a.moreWords, 1);
   assert.deepEqual(a.gasPrice, { floor: "9532143", failed: "5916993" });
   assert.equal(a.templateTx, "0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03");
-  const s = formatNextAction(a);
+  const s = formatNextAction(gateGasHints(a, rememberedFailure(text)));
+  assert.match(s, /Failure reason: Too little received \(used 192148 of 246588 gas, not out of gas\)/);
   assert.match(s, /arg word 4 = 0x40345a5d65e9884189 \(was 0x4034297ede533478d4\)/);
-  assert.match(s, /Consider bidding >= 9532143 wei/);
-  assert.match(s, /does not prove it caused the revert/);
-  assert.doesNotMatch(s, /—/);
-  // new wording round-trips through the same parser
-  assert.deepEqual(parseNextAction("retry used gas limit 900 (failed with limit 500, retry used 700); consider gas limit >= 900; retry bid 20 wei (failed at 10); consider bidding >= 20 wei; template tx 0xabc").gasLimit, { floor: 900, failed: 500 });
+  assert.doesNotMatch(s, /gas price|bidding/i);
+  assert.doesNotMatch(s, /\u2014/);
+});
+
+test("revisions: a corrected memory gets its own idempotency key and wins recall for the same pair", async () => {
+  assert.equal(memoryKey("base", "0xf1", "0xs1"), "base:0xf1:0xs1");
+  assert.equal(memoryKey("base", "0xf1", "0xs1", 2), "base:0xf1:0xs1:r2");
+  const before = mem.length;
+  const r = await recordRetry("base", "0xf1", "0xs1", store, 2);
+  assert.match(r.text, / success_block=103 rev=2\. /);
+  assert.equal(mem.length, before + 1);
+  const hit = await onFailure("base", "0xf2", { store });
+  assert.ok(hit.matched && hit.memoryBlobId === `blob${before + 1}`);
 });

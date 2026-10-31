@@ -1,12 +1,11 @@
 "use client";
 import { Check, Copy } from "lucide-react";
-import { clip, formatNextAction, parseNextAction } from "@/lib/advice";
+import { clip, formatNextAction, type NextAction as Action } from "@/lib/advice";
 import { cn } from "@/lib/utils";
 import { useCopy } from "@/lib/use-copy";
 
-/** Copy-ready next action: calldata word changes, then the gas floor, qualified. Full values go to the clipboard. */
-export function NextAction({ nextAction, className }: { nextAction: string; className?: string }) {
-  const a = parseNextAction(nextAction);
+/** Copy-ready next action: the failure reason, then what to change. Gas appears only for out-of-gas failures. */
+export function NextAction({ action: a, className }: { action: Action; className?: string }) {
   const text = formatNextAction(a);
   const n = (x: string | number) => Number(x).toLocaleString("en-US");
   const [copied, copy] = useCopy();
@@ -25,6 +24,11 @@ export function NextAction({ nextAction, className }: { nextAction: string; clas
         <span aria-live="polite" className="sr-only">{copied === "ok" ? "Suggestion copied" : copied === "err" ? "Copy failed" : ""}</span>
       </div>
       <ul className="space-y-2.5 px-3.5 py-3 text-small text-ink-2">
+        {a.reason && (
+          <Step>
+            Failure reason: <span className="text-ink">{a.reason}</span>
+          </Step>
+        )}
         {a.callInstead && (
           <Step>call <code className="font-mono text-ink">{a.callInstead.to}</code> instead of <code className="font-mono">{a.callInstead.from}</code></Step>
         )}
@@ -45,12 +49,9 @@ export function NextAction({ nextAction, className }: { nextAction: string; clas
           </Step>
         )}
         {a.resubmit && <Step>Same calldata and gas; the retry landed {a.resubmit} later. Resubmitting may be enough.</Step>}
-        {(a.gasLimit || a.gasPrice) && (
+        {a.gasLimit && (
           <Step>
-            {a.gasPrice && <>Gas price: retry bid <span className="num font-mono text-ink">{n(a.gasPrice.floor)}</span> wei <span className="text-ink-4">(failed at {n(a.gasPrice.failed)})</span>. Consider bidding ≥ that.</>}
-            {a.gasPrice && a.gasLimit && <br />}
-            {a.gasLimit && <>Gas limit: retry used <span className="num font-mono text-ink">{n(a.gasLimit.floor)}</span> <span className="text-ink-4">(failed with {n(a.gasLimit.failed)})</span>. Consider ≥ that.</>}
-            <span className="mt-1 block text-label text-ink-4">Gas differed between attempts; not proven to be the cause.</span>
+            Out of gas at <span className="num font-mono text-ink">{n(a.gasLimit.failed)}</span>; the retry used a limit of <span className="num font-mono text-ink">{n(a.gasLimit.floor)}</span>. Consider ≥ that.
           </Step>
         )}
       </ul>

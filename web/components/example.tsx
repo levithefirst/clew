@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Hash } from "@/components/hash";
-import { DATA, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, type Memory } from "@/lib/data";
+import { DATA, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, nextActionOf, type Memory } from "@/lib/data";
 import { clip } from "@/lib/advice";
 import { NextAction } from "@/components/next-action";
 import { cn, fmt, short } from "@/lib/utils";
@@ -36,6 +36,7 @@ export function Example() {
   const d = m.diff;
   const exp = explorerName[m.chain];
   const moreArgs = d.argsChanged - d.args.length;
+  const action = nextActionOf(m);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[19rem_1fr]">
@@ -147,7 +148,7 @@ export function Example() {
               <Hash value={m.success_tx} href={txUrl(m.chain, m.success_tx)} label="prior success" linkLabel={exp} className="text-ink" />
               {m.success_block && <span className="num text-label text-ink-4">block {m.success_block.toLocaleString("en-US")}</span>}
             </p>
-            {m.next_action && <NextAction nextAction={m.next_action} className="mt-3" />}
+            {action && <NextAction action={action} className="mt-3" />}
             <p className="mt-4 text-label text-ink-4">
               {recall ? "Returned by recall in the Mainnet demo run." : "Stored on Walrus; returned on this pair’s next matching failure. No repeat failure was observed for it in the demo window."}
             </p>
