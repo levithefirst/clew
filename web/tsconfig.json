@@ -6,6 +6,7 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true, // lib/core is a vendored copy of ../src, which imports "./x.ts"
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

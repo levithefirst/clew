@@ -15,6 +15,10 @@ export default function Privacy() {
       <p>
         Only what makes the site work: the sign-in session and its short-lived security cookies, a cookie that remembers you’ve seen the welcome message, and your light/dark theme choice in local storage. No advertising or tracking cookies.
       </p>
+      <h2>Try it</h2>
+      <p>
+        A transaction hash you paste is used to read public chain data through Tatum and to search Walrus Memory. We don’t store it. If teaching is switched on and you use it, Clew writes the verified pair (two public transaction hashes plus the wallet and contract addresses) to Walrus Memory. <strong>A Walrus memory can’t be deleted</strong>, so only teach Clew about transactions you are happy to have remembered.
+      </p>
       <h2>On-chain data</h2>
       <p>
         The examples on this site are public Mainnet transactions read through Tatum RPC. The memories are stored in Walrus Memory. Neither contains anything about you as a site visitor.

@@ -51,8 +51,8 @@ export function Hero() {
             The next time the same contract fails with a similar error, Clew surfaces the exact retry that succeeded before (the calldata change, the gas, the nonce) instead of a generic <span className="whitespace-nowrap font-mono text-[0.95em] text-ink-2">“transaction reverted”</span>.
           </p>
           <div className="rise-4 mt-9 flex flex-wrap items-center gap-3">
-            <a href="#same-failure" className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-fill px-5 text-body-sm font-[580] text-on-brand hover:bg-brand-fill-hover">
-              See a real recall
+            <a href="#try" className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand-fill px-5 text-body-sm font-[580] text-on-brand hover:bg-brand-fill-hover">
+              Try it on a failed transaction
             </a>
             <a href={SITE.repo} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl border border-line-strong bg-raised px-5 text-body-sm font-[540] text-ink-2 hover:bg-fill-hover hover:text-ink">
               <GitHubIcon className="size-4" /> View the code

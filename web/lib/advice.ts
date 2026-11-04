@@ -5,6 +5,8 @@ export interface NextAction {
   reason?: string;
   calldata: { index: number; to: string; from: string }[];
   moreWords: number;
+  /** Sui: changed Pure inputs (EVM memories use calldata words). */
+  inputs?: { index: number; to: string; from: string }[];
   callInstead?: { to: string; from: string };
   value?: { to: string; from: string };
   gasLimit?: { floor: number; failed: number };
@@ -26,6 +28,7 @@ export function parseNextAction(text: string): NextAction {
   const why = text.match(/(?:^|; )reason: (.*? \(used \d+ of \d+ gas, not out of gas\))/);
   if (why) a.reason = why[1];
   for (const m of text.matchAll(/arg word (\d+) = (\S+) \(was (\S+?)\)/g)) a.calldata.push({ index: Number(m[1]), to: m[2], from: m[3] });
+  a.inputs = [...text.matchAll(/input (\d+) = (\S+) \(was (\S+?)\)/g)].map((m) => ({ index: Number(m[1]), to: m[2], from: m[3] }));
   const more = text.match(/\+(\d+) more words differ/);
   if (more) a.moreWords = Number(more[1]);
   const fn = text.match(/call (0x[0-9a-f]+) instead of (0x[0-9a-f]+)/);
@@ -64,6 +67,10 @@ export function formatNextAction(a: NextAction): string {
     for (const c of a.calldata) out.push(`    arg word ${c.index} = ${c.to} (was ${c.from})`);
     if (a.moreWords) out.push(`    +${a.moreWords} more word${a.moreWords === 1 ? " differs; copy it" : "s differ; copy them"} from the template tx`);
   }
+  if (a.inputs?.length) {
+    out.push(`- Change the transaction inputs like the retry:`);
+    for (const i of a.inputs) out.push(`    input ${i.index} = ${i.to} (was ${i.from})`);
+  }
   if (a.gasLimit) out.push(`- Out of gas: the failed attempt hit its limit of ${a.gasLimit.failed}; the retry used a limit of ${a.gasLimit.floor}. Consider >= ${a.gasLimit.floor}.`);
   if (a.resubmit) out.push(`- Calldata and gas were identical; the retry landed ${a.resubmit} later. State or timing likely changed, so resubmitting may be enough.`);
   return out.join("\n");
@@ -79,6 +86,7 @@ export function adviceLines(a: NextAction, max = 4): string[] {
   if (a.value) out.push(`send value ${n(a.value.to)} wei (failed with ${n(a.value.from)})`);
   for (const c of a.calldata) out.push(`re-encode arg ${c.index} → ${clip(c.to)}`);
   if (a.moreWords) out.push(`+${a.moreWords} more calldata word${a.moreWords === 1 ? "" : "s"}; rebuild params like the retry`);
+  for (const i of a.inputs ?? []) out.push(`change input ${i.index} → ${clip(i.to)}`);
   if (a.resubmit) out.push(`same calldata and gas; retry landed ${a.resubmit} later`);
   if (a.gasLimit) out.push(`out of gas at ${n(a.gasLimit.failed)}; retry used a limit of ${n(a.gasLimit.floor)}`);
   return out.slice(0, max);

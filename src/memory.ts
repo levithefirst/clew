@@ -31,7 +31,8 @@ export const supersededKey = (key: string): string | undefined => {
   if (!m) return undefined;
   return Number(m[2]) > 2 ? `${m[1]}:r${Number(m[2]) - 1}` : m[1];
 };
-export const readLedger = (): Ledger => (existsSync(LEDGER) ? JSON.parse(readFileSync(LEDGER, "utf8")) : {});
+// The ledger path is a runtime setting (CLEW_LEDGER), so the bundler is told not to trace the whole project for it.
+export const readLedger = (): Ledger => (existsSync(/*turbopackIgnore: true*/ LEDGER) ? JSON.parse(readFileSync(/*turbopackIgnore: true*/ LEDGER, "utf8")) : {});
 
 export const walrus: MemoryStore = {
   async remember(text, key) {
@@ -43,7 +44,7 @@ export const walrus: MemoryStore = {
     const supersedes = supersededKey(key);
     if (supersedes && !ledger[supersedes]) throw new Error(`${key} corrects ${supersedes}, which is not in the ledger`);
     ledger[key] = { job_id: accepted.job_id, blob_id: done.blob_id, namespace: done.namespace, written_at: new Date().toISOString(), text, ...(supersedes && { supersedes }) };
-    writeFileSync(LEDGER, JSON.stringify(ledger, null, 2) + "\n");
+    writeFileSync(/*turbopackIgnore: true*/ LEDGER, JSON.stringify(ledger, null, 2) + "\n");
     return { job_id: accepted.job_id, blob_id: done.blob_id };
   },
   async recall(query, opts = {}) {

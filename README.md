@@ -26,6 +26,17 @@ NEXT_ACTION: reason: <detail> (used <f> of <limit> gas, not out of gas); re-enco
 ```
 EVM memories written before this format (all 12 on Walrus today) omit the gas price, the sizes and the reason clause. Memory #1 (`0x15f0…` → `0x389a…`) also stored six unclipped 32-byte words. Walrus memories are never rewritten: a corrected version is a new write with `rev=2` and its own idempotency key (`chain:failed:success:r2`), linked in `memories.json` by `supersedes`. Recall and the site prefer the highest revision of a pair.
 
+## Try it (the website)
+
+https://clew-eight.vercel.app has a **Try it** box: paste a failed transaction hash (Base, Ethereum, Polygon or a Sui digest) and Clew finds the chain, reads the receipt through Tatum, explains the failure in one plain sentence, and shows two answers produced by the same run: what it says with an empty Walrus namespace, and what it says from the real `clew` namespace. The example buttons are real repeat failures from the Mainnet runs, including the one human-like wallet.
+
+- **Where the logic lives:** `src/explain.ts` (`checkFailure`, `teach`) and `src/reasons.ts` (plain-English reasons). The website's API routes call them: `POST /api/check` is read-only; `POST /api/teach` is off unless `CLEW_ALLOW_TEACH=1`.
+- **Teaching:** pasting the transaction that fixed a failure writes one memory, after Clew verifies on chain that the failure failed, the retry succeeded, both are from the same wallet to the same contract, and the retry came after the failure and within a day. A pair that doesn't verify never reaches Walrus. Walrus memories can't be deleted, and the page says so.
+- **Server settings** (Vercel project, names only): `TATUM_API_KEY`, `MEMWAL_KEY`, `MEMWAL_ACCOUNT_ID` switch live lookups on; `CLEW_ALLOW_TEACH=1` switches teaching on. Without the three keys the box falls back to the recorded run for the example buttons, labelled as recorded, and shows a plain message for anything else. The memwal delegate key can write to its Walrus account, so use a dedicated delegate key for the website and leave teaching off unless you want visitors writing memories.
+- **Limits:** lookups are rate-limited per server instance (6 a minute) and answers are cached for 5 minutes; teaching is limited to 3 an hour per visitor and 20 a day per instance. Those limits are best-effort on serverless, not a hard cap.
+- **The vendored core:** Vercel builds `web/` with its own install, so the API can't import `../src`. `web/lib/core/` is a generated copy (`npm run sync-core` in `web/`), and `tests/core-sync.test.ts` fails if it drifts.
+- **What a first-time visitor will see:** Clew's memory is scoped to the exact wallet and contract, so a wallet's first-ever failure gets the plain explanation and "no memory yet". It helps on a repeat failure, which is when the memory changes the answer.
+
 ## Setup
 
 Requires Node 20+ (memwal recommends a patched 22.x/24.x for production).
@@ -64,7 +75,7 @@ npm run classify                           # offline: tag each memory's wallet b
 
 The 2 to 3 minute video script with exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](BLOG.md).
 
-1. `npm test` (about 1 s, 31 tests) shows the logic offline.
+1. `npm test` (about 1 s, 38 tests) shows the logic offline.
 2. `npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 --without-memory` returns only the generic "reverted" message.
 3. The same command without the flag recalls the stored memory for wallet `0x336a…` on contract `0x8ea5…` and returns the earlier retry `0x389a…` with a copy-ready next action: the revert reason, then the calldata words to re-encode. No gas hint: that failure used 78% of its gas limit.
 4. `memories.json` lists the 14 Walrus Mainnet writes (12 EVM, 2 Sui) (job id + blob id + text). Each blob resolves at `https://walruscan.com/mainnet/blob/<blob_id>`; the content is SEAL-encrypted, so Walruscan shows that the blob exists, not its text.
