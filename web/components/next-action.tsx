@@ -1,6 +1,6 @@
 "use client";
 import { Check, Copy } from "lucide-react";
-import { clip, formatNextAction, type NextAction as Action } from "@/lib/advice";
+import { clip, formatNextAction, type Evidence as Ev, type NextAction as Action } from "@/lib/advice";
 import { cn } from "@/lib/utils";
 import { useCopy } from "@/lib/use-copy";
 
@@ -24,6 +24,7 @@ export function NextAction({ action: a, className }: { action: Action; className
         <span aria-live="polite" className="sr-only">{copied === "ok" ? "Suggestion copied" : copied === "err" ? "Copy failed" : ""}</span>
       </div>
       <ul className="space-y-2.5 px-3.5 py-3 text-small text-ink-2">
+        {a.evidence && <Evidence e={a.evidence} />}
         {a.reason && (
           <Step>
             Failure reason: <span className="text-ink">{a.reason}</span>
@@ -80,5 +81,29 @@ function Step({ children }: { children: React.ReactNode }) {
       <span className="text-brand" aria-hidden>→</span>
       <div className="min-w-0 break-words">{children}</div>
     </li>
+  );
+}
+
+/** What repeated across the earlier retries that succeeded after this same error, most frequent first. */
+function Evidence({ e }: { e: Ev }) {
+  const of = (count: number) => `${count} of ${e.total}`;
+  if (!e.repeated) {
+    return <Step>{e.total} earlier retries succeeded after this same error and no single change repeated across them. Showing the most recent.</Step>;
+  }
+  const [top, ...rest] = e.ranked;
+  return (
+    <>
+      <Step>
+        Most consistent change: <span className="font-[580] text-ink">{top.label}</span>, in <span className="num font-mono text-ink">{of(top.count)}</span> earlier retries that succeeded after this same error.
+      </Step>
+      {rest.filter((r) => r.count >= 2).map((r) => (
+        <Step key={r.label}>Also seen: {r.label}, in <span className="num font-mono">{of(r.count)}</span>.</Step>
+      ))}
+      {e.alsoDiffered.length > 0 && (
+        <li className="pl-5 text-label text-ink-4">
+          Also differed, not shown as a cause: {e.alsoDiffered.map((r) => `${r.label} (${of(r.count)})`).join("; ")}.
+        </li>
+      )}
+    </>
   );
 }

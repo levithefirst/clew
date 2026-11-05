@@ -116,6 +116,8 @@ export interface NextAction {
   callInstead?: { to: string; from: string }; value?: { to: string; from: string };
   gasLimit?: { floor: number; failed: number }; gasPrice?: { floor: string; failed: string };
   resubmit?: string; templateTx?: string;
+  /** Present only when more than one earlier retry succeeded after this same error (see rankChanges). */
+  evidence?: Evidence;
 }
 
 export function parseNextAction(text: string): NextAction {
@@ -150,6 +152,7 @@ export function gateGasHints(a: NextAction, remembered: FailureFacts, current?: 
 export function formatNextAction(a: NextAction): string {
   const out: string[] = [];
   if (a.templateTx) out.push(`Prior successful retry (template): ${a.templateTx}`);
+  if (a.evidence) out.push(...evidenceLines(a.evidence));
   if (a.reason) out.push(`- Failure reason: ${a.reason}.`);
   if (a.callInstead) out.push(`- Call ${a.callInstead.to} instead of ${a.callInstead.from}.`);
   if (a.value) out.push(`- Send value ${a.value.to} wei (failed with ${a.value.from}).`);
@@ -251,24 +254,125 @@ export function rememberedFailure(text: string): FailureFacts {
 const byRecency = (a: Recalled, b: Recalled) =>
   Number(field(b.text, "success_block")) - Number(field(a.text, "success_block")) || Number(field(b.text, "rev") ?? 1) - Number(field(a.text, "rev") ?? 1);
 
+// ---------- learning over time: what repeats across a wallet's earlier successes ----------
+export type ChangeKind = "word" | "input" | "function" | "gasPrice" | "gasLimit";
+export interface ChangeKey { kind: ChangeKind; id: string; label: string }
+export interface Ranked { label: string; count: number }
+export interface Evidence {
+  /** Earlier retries that succeeded after this wallet failed on this contract with this error. */
+  total: number;
+  /** True when at least one change appears in two or more of them. */
+  repeated: boolean;
+  /** Most frequent first (ties: calldata, function, then gas). Gas drops out of here when calldata is the majority. */
+  ranked: Ranked[];
+  /** Gas differences kept apart: facts, never the headline, when a calldata change is the majority. */
+  alsoDiffered: Ranked[];
+}
+
+const CALLDATA: ChangeKind[] = ["word", "input", "function"];
+const PRIORITY: Record<ChangeKind, number> = { word: 0, input: 0, function: 1, gasPrice: 2, gasLimit: 3 };
+
+/**
+ * The kinds of change one stored retry made, read from its "Change:" sentence (and, for memories written before the
+ * gas price was recorded, from its NEXT_ACTION). Calldata words are keyed by position: the value is a fresh quote
+ * every time, the position is what repeats. Gas counts only when clearly higher, the same 10% / 20% bars as before.
+ */
+export function changeKeys(text: string): ChangeKey[] {
+  const change = text.match(/Change: (.*?)\. NEXT_ACTION/s)?.[1] ?? "", next = text.match(/NEXT_ACTION: (.*)$/s)?.[1] ?? "";
+  const keys = new Map<string, ChangeKey>();
+  const add = (kind: ChangeKind, id: string, label: string) => keys.set(id, { kind, id, label });
+  for (const m of change.matchAll(/\barg (\d+) \S+ -> \S+/g)) add("word", `word:${m[1]}`, `calldata word ${m[1]}`);
+  for (const m of change.matchAll(/\binput (\d+) \S+ -> \S+/g)) add("input", `input:${m[1]}`, `input ${m[1]}`);
+  const fn = change.match(/\bfunction (\S+) -> (\S+?);/);
+  if (fn) add("function", `function:${fn[1]}>${fn[2]}`, `function ${fn[1]} \u2192 ${fn[2]}`);
+  const price = change.match(/gas price (\d+) vs (\d+)/);
+  const pricedUp = price ? BigInt(price[1]) > (BigInt(price[2]) * 11n) / 10n : /(?:bid gas price >= |retry bid )\d+ wei \(failed at \d+\)/.test(next);
+  if (pricedUp) add("gasPrice", "gasPrice", "a higher gas price on the retry");
+  const limit = change.match(/gas limit (\d+) vs (\d+)/);
+  if (limit && Number(limit[1]) > Number(limit[2]) * 1.2) add("gasLimit", "gasLimit", "a higher gas limit on the retry");
+  return [...keys.values()];
+}
+
+/**
+ * Count how often each change appears across the earlier successful retries (newest first) and rank them.
+ * `template` is the newest retry that contains the top change, so the tx and word values shown are one that did it.
+ */
+export function rankChanges(texts: string[]): Evidence & { template: number; calldataMajority: boolean } {
+  const total = texts.length;
+  const seen = new Map<string, ChangeKey & { count: number; newest: number }>();
+  const perRetry = texts.map(changeKeys);
+  perRetry.forEach((keys, i) => keys.forEach((k) => {
+    const e = seen.get(k.id) ?? { ...k, count: 0, newest: i };
+    e.count++;
+    seen.set(k.id, e);
+  }));
+  const withCalldata = perRetry.filter((ks) => ks.some((k) => CALLDATA.includes(k.kind))).length;
+  const calldataMajority = withCalldata * 2 > total;
+  const all = [...seen.values()].sort((a, b) => b.count - a.count || PRIORITY[a.kind] - PRIORITY[b.kind] || a.label.localeCompare(b.label));
+  const isGas = (k: ChangeKey) => !CALLDATA.includes(k.kind);
+  const ranked = all.filter((k) => !calldataMajority || !isGas(k));
+  const alsoDiffered = calldataMajority ? all.filter(isGas) : [];
+  const repeated = (ranked[0]?.count ?? 0) >= 2;
+  const view = (k: { label: string; count: number }): Ranked => ({ label: k.label, count: k.count });
+  return {
+    total, repeated, ranked: ranked.slice(0, 3).map(view), alsoDiffered: alsoDiffered.map(view),
+    template: repeated ? ranked[0].newest : 0, calldataMajority,
+  };
+}
+
+const of = (r: Ranked, total: number) => `${r.count} of ${total}`;
+/** The evidence as copy-ready lines (the website renders the same facts from the same structure). */
+export function evidenceLines(e: Evidence): string[] {
+  const out: string[] = [];
+  if (e.repeated) {
+    const [top, ...rest] = e.ranked;
+    out.push(`- Most consistent change: ${top.label}, in ${of(top, e.total)} earlier retries that succeeded after this same error.`);
+    for (const r of rest) if (r.count >= 2) out.push(`- Also seen: ${r.label}, in ${of(r, e.total)}.`);
+  } else {
+    out.push(`- ${e.total} earlier retries succeeded after this same error and no single change repeated across them. Showing the most recent.`);
+  }
+  if (e.alsoDiffered.length) out.push(`- Also differed, not shown as a cause: ${e.alsoDiffered.map((r) => `${r.label} (${of(r, e.total)})`).join("; ")}.`);
+  return out;
+}
+
 /** The fields recall needs from a failure, on any chain (an EVM Attempt or a Sui attempt both fit). */
 export interface FailureLike extends FailureFacts { chain: string; hash: string; contract: string; wallet: string; selector: string }
 
-/** Recall for a failure already loaded: semantic search, then the strict tag filter, newest path first, gas gate. */
+/** One entry per failed->success pair: a corrected rewrite (higher rev) replaces the memory it supersedes. */
+function distinctPairs(hits: Recalled[]): Recalled[] {
+  const best = new Map<string, Recalled>();
+  for (const h of [...hits].sort(byRecency)) {
+    const k = `${field(h.text, "failed_tx")}:${field(h.text, "success_tx")}`;
+    if (!best.has(k)) best.set(k, h);
+  }
+  return [...best.values()].sort(byRecency);
+}
+
+/**
+ * Recall for a failure already loaded: semantic search, then the strict tag filter. With one earlier success the
+ * answer is that path. With several, the changes are counted and the most frequent leads, labelled with its count;
+ * when a calldata change is the majority, gas advice is held back.
+ */
 export async function recallFor<F extends FailureLike>(f: F, opts: { store?: MemoryStore; namespace?: string } = {}) {
   const store = opts.store ?? walrus;
   const query = `CLEW chain=${f.chain} contract=${f.contract} wallet=${f.wallet} error=${f.errorSig} selector=${f.selector}`;
   const hits = await store.recall(query, { namespace: opts.namespace, topK: 10 });
-  const match = hits
+  const matches = distinctPairs(hits
     .filter((h) => field(h.text, "chain") === f.chain && field(h.text, "contract") === f.contract && field(h.text, "wallet") === f.wallet)
-    .filter((h) => similarError(field(h.text, "error") ?? "", f.errorSig!))
-    .sort(byRecency)[0];
-  if (!match) {
+    .filter((h) => similarError(field(h.text, "error") ?? "", f.errorSig!)));
+  if (!matches.length) {
     return { matched: false as const, failure: f,
       message: `Tx ${f.hash} on ${f.chain} reverted (${f.errorSig}). No prior successful path on record for this wallet+contract. Check params and retry.` };
   }
+  const ranking = matches.length > 1 ? rankChanges(matches.map((m) => m.text)) : undefined;
+  const match = matches[ranking?.template ?? 0];
   const stored = match.text.match(/NEXT_ACTION: (.*)$/)?.[1] ?? "";
-  const nextAction = gateGasHints(parseNextAction(stored), rememberedFailure(match.text), f);
+  let nextAction = gateGasHints(parseNextAction(stored), rememberedFailure(match.text), f);
+  if (ranking) {
+    const { template: _template, calldataMajority, ...evidence } = ranking;
+    // A calldata change that most successes share outranks gas: the gas-limit hint is held back (it stays a fact above).
+    nextAction = { ...nextAction, evidence, ...(calldataMajority ? { gasLimit: undefined } : {}) };
+  }
   return {
     matched: true as const, failure: f, memoryBlobId: match.blob_id, distance: match.distance,
     priorPath: { failedTx: field(match.text, "failed_tx"), successTx: field(match.text, "success_tx"), successBlock: Number(field(match.text, "success_block")),

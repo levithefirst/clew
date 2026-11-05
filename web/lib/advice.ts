@@ -13,6 +13,26 @@ export interface NextAction {
   gasPrice?: { floor: string; failed: string };
   resubmit?: string;
   templateTx?: string;
+  /** Present only when several earlier retries succeeded after this same error (src/clew.ts rankChanges). */
+  evidence?: Evidence;
+}
+
+export interface Ranked { label: string; count: number }
+export interface Evidence { total: number; repeated: boolean; ranked: Ranked[]; alsoDiffered: Ranked[] }
+
+/** Mirrors evidenceLines in ../src/clew.ts. */
+export function evidenceLines(e: Evidence): string[] {
+  const of = (r: Ranked) => `${r.count} of ${e.total}`;
+  const out: string[] = [];
+  if (e.repeated) {
+    const [top, ...rest] = e.ranked;
+    out.push(`- Most consistent change: ${top.label}, in ${of(top)} earlier retries that succeeded after this same error.`);
+    for (const r of rest) if (r.count >= 2) out.push(`- Also seen: ${r.label}, in ${of(r)}.`);
+  } else {
+    out.push(`- ${e.total} earlier retries succeeded after this same error and no single change repeated across them. Showing the most recent.`);
+  }
+  if (e.alsoDiffered.length) out.push(`- Also differed, not shown as a cause: ${e.alsoDiffered.map((r) => `${r.label} (${of(r)})`).join("; ")}.`);
+  return out;
 }
 
 /** What the remembered failure looked like: enough to decide whether a gas hint is honest. */
@@ -59,6 +79,7 @@ export function gateGasHints(a: NextAction, f: FailureFacts): NextAction {
 export function formatNextAction(a: NextAction): string {
   const out: string[] = [];
   if (a.templateTx) out.push(`Prior successful retry (template): ${a.templateTx}`);
+  if (a.evidence) out.push(...evidenceLines(a.evidence));
   if (a.reason) out.push(`- Failure reason: ${a.reason}.`);
   if (a.callInstead) out.push(`- Call ${a.callInstead.to} instead of ${a.callInstead.from}.`);
   if (a.value) out.push(`- Send value ${a.value.to} wei (failed with ${a.value.from}).`);
