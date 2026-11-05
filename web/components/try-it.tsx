@@ -49,7 +49,7 @@ function recordedFor(hash: string): Done | null {
       failure: { wallet: m.wallet, contract: m.contract, errorSig: m.error, errorDetail: m.error_detail ?? "", block: 0, gasUsed: 0, gasLimit: 0 },
       reason: explainError(m.error, m.error_detail ?? undefined),
       without: r.without_memory ?? `Tx ${short(r.failure_tx, 10, 6)} on ${r.chain} reverted (${m.error}). No prior successful path on record for this wallet+contract. Check params and retry.`,
-      memory: { successTx: r.with_memory.prior_success, successBlock: r.with_memory.block, blobId: r.with_memory.blob_id, changed: summarizeChange(r.with_memory.change), nextAction: action },
+      memory: { successTx: r.with_memory.prior_success, successBlock: r.with_memory.block, blobId: r.with_memory.blob_id, changed: summarizeChange(r.with_memory.change), nextAction: action, priorRetries: 1 },
     },
   };
 }
@@ -206,13 +206,14 @@ function Compare({ done }: { done: Done }) {
                 {m.successBlock > 0 && <span className="num text-label text-ink-4">{blockWord(chain)} {m.successBlock.toLocaleString("en-US")}</span>}
               </p>
               <p className="mt-3 text-small text-ink-2 text-pretty">
-                <span className="font-[580] text-ink">What changed:</span>{" "}
+                <span className="font-[580] text-ink">{m.ranking ? "What changed in the retry shown:" : "What changed:"}</span>{" "}
                 {m.changed.changed.length ? m.changed.changed.join(", ") : "nothing in the call itself"}.
                 {m.changed.alsoDiffered.length > 0 && (
                   <span className="text-ink-4"> Also differed, and not shown as a cause: {m.changed.alsoDiffered.join(", ")}.</span>
                 )}
               </p>
-              <NextAction action={m.nextAction} className="mt-4" />
+              {m.ranking && <p className="mt-3 text-label text-ink-4">Ranked from {m.priorRetries} earlier retries that succeeded after this same error.</p>}
+              <NextAction action={m.nextAction} className="mt-3" />
               <p className="mt-4 flex flex-wrap items-center gap-x-2 text-label text-ink-4">
                 Walrus blob id
                 <Hash value={m.blobId} href={blobUrl(m.blobId)} label="Walrus blob" linkLabel="Walruscan" head={10} tail={6} />

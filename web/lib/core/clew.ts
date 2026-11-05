@@ -374,7 +374,7 @@ export async function recallFor<F extends FailureLike>(f: F, opts: { store?: Mem
     nextAction = { ...nextAction, evidence, ...(calldataMajority ? { gasLimit: undefined } : {}) };
   }
   return {
-    matched: true as const, failure: f, memoryBlobId: match.blob_id, distance: match.distance,
+    matched: true as const, failure: f, memoryBlobId: match.blob_id, distance: match.distance, priorRetries: matches.length,
     priorPath: { failedTx: field(match.text, "failed_tx"), successTx: field(match.text, "success_tx"), successBlock: Number(field(match.text, "success_block")),
       change: match.text.match(/Change: (.*?)\. NEXT_ACTION/)?.[1] },
     nextAction, suggestion: formatNextAction(nextAction), storedNextAction: stored,
