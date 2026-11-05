@@ -20,50 +20,42 @@ Open https://clew-eight.vercel.app. One line: "A transaction reverts. Next time 
 npm test
 ```
 
-Expected: `# pass 38`, `# fail 0`. The suite covers revert decoding, the gas gate, the bounded memory format, the wallet classifier, the watcher (reorg + resume on a fixture stream), the live demo against a fake Base chain, and the Sui adapter (real responses recorded on 2026-10-31 plus labelled synthetic history).
+Expected: `# pass 47`, `# fail 0`. The suite covers revert decoding, the gas gate, the bounded memory format, the wallet classifier, the watcher (reorg + resume on a fixture stream), the live demo against a fake Base chain, and the Sui adapter (real responses recorded on 2026-10-31 plus labelled synthetic history).
 
-## 0:30 to 1:05 The same failure, without and with memory (a few seconds each)
+## 0:30 to 1:05 The featured failure, without and with memory (a few seconds each)
+
+The featured example is the one non-bot pair: Ethereum wallet `0xaffa7d95ea5984a18e1b4d6f38c1175bdb18a793`, 65 prior transactions, no automation signal. Its first failure `0xd55c…8a20` (`Expired`) was fixed by `0x5393…7565` four blocks later, and the only thing that changed was one calldata word, a deadline moved 60 seconds forward. It then failed the same way again (`0x5004…2ade`).
 
 ```bash
-npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 --without-memory
-npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6
+npm run check -- ethereum 0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade --without-memory
+npm run check -- ethereum 0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade
 ```
 
-Without memory (empty namespace):
+Without memory (empty namespace), as printed by the real run (`npm run demo`, 2026-11-05):
 
 ```
-FAILURE  base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6
-         wallet 0x336a079d7b894f6b6356674b3ad668bffdd5811d -> contract 0x8ea5ad2a58c1dae75394b1e8636e6518eb6dac50, status 0x0, block …
-         error revert:too_little_received (Too little received)
-
-WITHOUT MEMORY
-  Tx 0xd72b…4bb6 on base reverted (revert:too_little_received). No prior successful path on record for this wallet+contract. Check params and retry.
+Tx 0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade on ethereum reverted (revert:expired). No prior successful path on record for this wallet+contract. Check params and retry.
 ```
 
-With memory (Tatum read, Walrus recall in namespace `clew`, strict wallet + contract + error filter):
+With memory (Tatum read, Walrus recall in namespace `clew`, strict wallet + contract + error filter), same run:
 
 ```
-WITH MEMORY  (Walrus blob B57Lqac7DaDkXiXwNGHJML0S5Fo1EGOm9CMHmcOJOQc)
-  prior failure 0x15f0e33c6bcaae91577346de3efac3680848b1158407ee77dbc6d743361ac153
-  prior success 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03 (block 53152834)
-
-NEXT ACTION
-  Prior successful retry (template): 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03
-  - Failure reason: Too little received (used <gasUsed> of <gasLimit> gas, not out of gas).
-  - Re-encode calldata like the retry:
-      arg word 4 = 0x40345a5d65e9884189 (was 0x4034297ede533478d4)
-      arg word 15 = 0x6ae0758300000000000000000000000000000000000000000000000000000000 (was 0x6ae0757700000000000000000000000000000000000000000000000000000000)
-      arg word 16 = 0x5a772e0000000000000000000000000000000000000000000000040345a5d65 (was 0x5a772e000000000000000000000000000000000000000000000004034297ede)
-      +1 more word differs; copy it from the template tx
+prior success 0x539321141eb96164edb752ec9217abfe86352a85cba891e3cde7998858dd7565 (block 26283279, blob 7YJ-W7r8MebwQr51bJB_g2p7TUJNNSzPXJhjIThjKG4)
+change: gas used was 172053 vs 33669 on failure; gas limit 500000 vs 500000; nonce 65 -> 66; same function 0x3593564c; calldata 1 arg word(s) changed (arg 2 0x6ae074b2 -> 0x6ae074ee)
+| Prior successful retry (template): 0x539321141eb96164edb752ec9217abfe86352a85cba891e3cde7998858dd7565
+| - Failure reason: Expired (used 33681 of 500000 gas, not out of gas).
+| - Re-encode calldata like the retry:
+|     arg word 2 = 0x6ae074ee (was 0x6ae074b2)
 ```
 
-`<gasUsed>` and `<gasLimit>` are read live from the new failure `0xd72b…4bb6`: fill them in from the first real run. Say on camera: the retry also bid a higher gas price, but this failure did not run out of gas, so Clew shows the revert reason, not a gas hint.
+Say on camera: no gas hint, because the failure used 7% of its gas limit; only the deadline word changed. `npm run check` prints the same facts under its own headings; run it once before recording and paste its output here.
 
 ## 1:05 to 1:25 Proof (site, explorers, Walrus)
 
-- https://clew-eight.vercel.app/#same-failure: the same two answers side by side. Click **Copy suggestion**.
-- Basescan: failure [`0xd72b…4bb6`](https://basescan.org/tx/0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6), prior success [`0x389a…0d03`](https://basescan.org/tx/0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03).
-- Walrus: blob [`B57Lqac7…JOQc`](https://walruscan.com/mainnet/blob/B57Lqac7DaDkXiXwNGHJML0S5Fo1EGOm9CMHmcOJOQc) on Walruscan Mainnet. The page proves the blob exists; its content is SEAL-encrypted, so the explorer cannot show the memory text. The readable text and all 12 job and blob ids are in `memories.json`.
+- https://clew-eight.vercel.app/try: the featured failure is the first button; click it for the two columns side by side, then **Copy suggestion**.
+- Etherscan: failure [`0xd55c…8a20`](https://etherscan.io/tx/0xd55c0f54b9b10b56cf83ec4c919224adca39c5ffd825486129f95c4f850b8a20), the retry that worked [`0x5393…7565`](https://etherscan.io/tx/0x539321141eb96164edb752ec9217abfe86352a85cba891e3cde7998858dd7565), the later failure [`0x5004…2ade`](https://etherscan.io/tx/0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade).
+- Walrus: blob [`7YJ-W7r8…jKG4`](https://walruscan.com/mainnet/blob/7YJ-W7r8MebwQr51bJB_g2p7TUJNNSzPXJhjIThjKG4) on Walruscan Mainnet. The page proves the blob exists; its content is SEAL-encrypted, so the explorer cannot show the memory text. The readable text and all job and blob ids are in `memories.json`.
+- The Base bot example is still there for contrast: `0xd72b…4bb6` returns `0x389a…0d03` (blob `B57Lqac7…`), from a wallet with 58,508 prior transactions.
 
 ## 1:25 to 1:45 Honesty: who is retrying? (offline, instant)
 
@@ -91,18 +83,7 @@ npm run sui -- recall 6mDBLQjL4Ld48683HjpZnV4xBQEZB5ymohxzxNaYxcvM
 
 Reported result: `WITH MEMORY`, prior success `ByGXz3iXES3NHEAbXzZmfNuKmHZVQkuak9mGGag4U6JV` (Walrus blob `qNi52wSg…7eUs`), with the reason line "used 3411613 of 6410000 gas, not out of gas". Paste the full terminal output here when recording. Say: Tatum serves Sui through GraphQL, not JSON-RPC; same loop, same Walrus memory, same recall. That wallet is not classified as human: Sui has no nonce to check.
 
-Or, once it has real output, one of these (after the first real run):
-
-1. **Live demo** on Base with a burner wallet (about 1 minute, cents of gas):
-   ```bash
-   npm run live-demo
-   ```
-   Shows the deliberate failure, the corrected retry, the Walrus write, then a second failure answered by recall ("re-encode calldata: arg word 0 = 0x3b9aca00"). Paste the real output here after the run.
-2. **Human-like recall** on Ethereum, the repeat failure of the `0xd55c…` pair (seconds):
-   ```bash
-   npm run check -- ethereum 0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade
-   ```
-   Paste the real output here after the run.
+Not run yet, so not shown: `npm run live-demo` (a Base burner wallet). Add it to this segment only after it has produced real output.
 
 ## 2:30 to 2:45 Close
 

@@ -145,7 +145,7 @@ export function TryIt({ heading = "h2" }: { heading?: "h1" | "h2" }) {
 
           {FEATURED && (
             <p className="mt-4 text-small text-ink-3 text-pretty">
-              <span className="font-[580] text-ink-2">Featured:</span> a {CHAIN_LABEL[FEATURED.f.chain]} wallet ({short(FEATURED.m.wallet, 6, 4)}) with no automation signal ({FEATURED.m.wallet_class.reasons[0].replace(/^no automation signal: /, "")}). Its retry changed {FEATURED.m.diff.argsChanged === 1 ? "one calldata word" : `${FEATURED.m.diff.argsChanged} calldata words`}, not just gas.
+              <span className="font-[580] text-ink-2">Featured:</span> {/^[AEIOU]/.test(CHAIN_LABEL[FEATURED.f.chain]) ? "an" : "a"} {CHAIN_LABEL[FEATURED.f.chain]} wallet ({short(FEATURED.m.wallet, 6, 4)}) with no automation signal ({FEATURED.m.wallet_class.reasons[0].replace(/^no automation signal: /, "")}). Its retry changed {FEATURED.m.diff.argsChanged === 1 ? "one calldata word" : `${FEATURED.m.diff.argsChanged} calldata words`}, not just gas.
             </p>
           )}
 
@@ -174,18 +174,18 @@ function Compare({ done }: { done: Done }) {
   const exp = explorerName[chain];
   const m = a.memory;
   return (
-    <div className="grid gap-4">
-      <div className="card flex flex-wrap items-center gap-x-5 gap-y-2 px-5 py-4 text-small text-ink-4 sm:px-7">
+    <div className="grid min-w-0 gap-4">
+      <div className="card flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2 px-5 py-4 text-small text-ink-4 sm:px-7">
         <span className="rounded-md bg-fill px-2 py-0.5 text-label font-[560] text-ink-2">{CHAIN_LABEL[chain]}</span>
         <span className="flex items-center gap-1.5">failed tx <Hash value={a.hash} href={txUrl(chain, a.hash)} label="failed transaction" linkLabel={exp} /></span>
         <span className="flex items-center gap-1.5">wallet <Hash value={a.failure.wallet} href={addrUrl(chain, a.failure.wallet)} label="wallet" linkLabel={exp} /></span>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid min-w-0 gap-4 md:grid-cols-2">
         {/* Memory off: what Clew can say with nothing remembered */}
-        <div className="card flex flex-col px-5 py-6 sm:px-7">
+        <div className="card flex min-w-0 flex-col px-5 py-6 sm:px-7">
           <p className="text-body-sm font-[580] text-ink-3">Memory off</p>
-          <p className="mt-4 break-words rounded-lg border border-dashed bg-fill/50 px-4 py-3.5 font-mono text-[0.8125rem] leading-relaxed text-ink-3">{a.without}</p>
+          <p className="mt-4 rounded-lg border border-dashed bg-fill/50 px-4 py-3.5 font-mono text-[0.8125rem] leading-relaxed text-ink-3 [overflow-wrap:anywhere]">{a.without}</p>
           <p className="eyebrow mt-5">Reason</p>
           <p className="mt-2 text-body-sm text-ink-2 text-pretty">{a.reason.text}</p>
           <p className="mt-2 break-words font-mono text-label text-ink-4">
@@ -196,7 +196,7 @@ function Compare({ done }: { done: Done }) {
         </div>
 
         {/* Memory on: the remembered retry */}
-        <div className="card flex flex-col border-brand/40 bg-brand-soft/50 px-5 py-6 sm:px-7">
+        <div className="card flex min-w-0 flex-col border-brand/40 bg-brand-soft/50 px-5 py-6 sm:px-7">
           <p className="text-body-sm font-[580] text-ink">Memory on</p>
           {m ? (
             <>

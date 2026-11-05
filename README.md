@@ -13,6 +13,18 @@ Clew handles one loop only: **failure → successful retry → next failure**.
 | 3. Remember | `recordRetry(chain, failed, success)` → `src/memory.ts` | Diffs gas used, gas limit, gas price, nonce, value, function selector, and each differing 32-byte calldata word. Writes a factual memory with `memwal.remember()` → `waitForRememberJob()` to namespace `clew` on `https://relayer.memory.walrus.xyz`. |
 | 4. Next failure | `onFailure(chain, hash)` | Ingests the new failure, runs `memwal.recall()`, then keeps only memories with an exact `chain` + `contract` + `wallet` match and a similar error signature. Returns `{priorPath, nextAction, suggestion}`: the stored `NEXT_ACTION` parsed into calldata changes, with the out-of-gas gate applied (below), as copy-ready text. Or a generic message if nothing matches. |
 
+**Learning over time:** when the same wallet has more than one earlier retry that succeeded after this contract and error, recall counts each kind of change across them (a calldata word by position, a function selector, a higher gas price, a higher gas limit), leads with the most frequent labelled with its count ("calldata word 1, in 3 of 4 earlier retries that succeeded after this same error"), and uses the newest retry that made that change as the template. When a calldata change is the majority, gas is kept apart as "also differed, not shown as a cause" and the gas-limit hint is held back. If nothing repeats it says so and shows the most recent. One earlier success behaves exactly as before. Counts describe what the earlier retries did, not why they worked. Synthetic example (four stored retries, three changed word 1, all four bid a higher gas price):
+
+```
+after 1 remembered retry:   - Re-encode calldata like the retry: arg word 1 = 0x6c (was 0x65)
+after 2 remembered retries: - Most consistent change: calldata word 1, in 2 of 2 earlier retries that succeeded after this same error.
+                            - Also differed, not shown as a cause: a higher gas price on the retry (2 of 2).
+after 4 remembered retries: - Most consistent change: calldata word 1, in 3 of 4 earlier retries that succeeded after this same error.
+                            - Also differed, not shown as a cause: a higher gas price on the retry (4 of 4).
+```
+
+No wallet in the current 14 memories has more than one earlier success on a contract, so the live site shows single-memory answers; the ranking is covered by `tests/ranking.test.ts`, which also runs it against the real stored memories.
+
 **Gas gate:** a gas hint is emitted only when the failed attempt ran out of gas (error signature `out-of-gas:*`, or gas used at least 98% of the limit). Otherwise the next action starts with the revert reason, and gas price stays in the factual "Change" record. The gate is applied again at recall time (`gateGasHints`), so memories written before it existed (5 of the 12 carry a gas hint; none of the 12 failures ran out of gas) are corrected when read, without rewriting Walrus.
 
 **Error signature:** `revert:<normalized reason>` | `panic:<code>` | `custom:<selector>` | `out-of-gas:<fn selector>` | `<fn selector>:reverted`. "Similar" means an exact match, or a token-Jaccard score of at least 0.6 between two revert strings.
@@ -33,7 +45,7 @@ https://clew-eight.vercel.app has a **Try it** box (also at `/try`): paste a fai
 - **Memory off:** what Clew says with an empty Walrus namespace, a generic "reverted" message, plus a one-sentence plain-English reason.
 - **Memory on:** the retry that worked before (source transaction), what changed in it, the copyable next action, and the Walrus blob id. If the wallet has no memory on that contract, both columns say so.
 
-The example buttons are real repeat failures from the Mainnet runs, including the one human-like wallet. The page only reads; it never writes a memory.
+The example buttons are real repeat failures from the Mainnet runs, with the **featured** one first: an Ethereum wallet (`0xaffa…a793`, 65 prior transactions, no automation signal) whose retry changed one calldata word, a deadline moved 60 seconds forward, not just gas. `web/scripts/build-data.mjs` picks it by rule (Base or Ethereum, no automation signal, a calldata word changed, a later failure from the same wallet). "No automation signal" is what the heuristic can say, not proof of a person. The page only reads; it never writes a memory.
 
 - **Where the logic lives:** `src/explain.ts` (`checkFailure`) and `src/reasons.ts` (plain-English reasons and the "what changed" summary). `POST /api/check` is the only route.
 - **Server settings** (Vercel project, names only): `TATUM_API_KEY`, `MEMWAL_KEY`, `MEMWAL_ACCOUNT_ID`. Without them the box falls back to the recorded run for the example buttons, labelled as recorded, and shows a plain message for any other hash. The memwal delegate key can write to its Walrus account, so give the website a dedicated delegate key.
@@ -79,7 +91,7 @@ npm run classify                           # offline: tag each memory's wallet b
 
 The 2 to 3 minute video script with exact commands and expected output: [`DEMO.md`](DEMO.md). Write-up: [`BLOG.md`](BLOG.md).
 
-1. `npm test` (about 1 s, 38 tests) shows the logic offline.
+1. `npm test` (about 1 s, 47 tests) shows the logic offline.
 2. `npm run check -- base 0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 --without-memory` returns only the generic "reverted" message.
 3. The same command without the flag recalls the stored memory for wallet `0x336a…` on contract `0x8ea5…` and returns the earlier retry `0x389a…` with a copy-ready next action: the revert reason, then the calldata words to re-encode. No gas hint: that failure used 78% of its gas limit.
 4. `memories.json` lists the 14 Walrus Mainnet writes (12 EVM, 2 Sui) (job id + blob id + text). Each blob resolves at `https://walruscan.com/mainnet/blob/<blob_id>`; the content is SEAL-encrypted, so Walruscan shows that the blob exists, not its text.
