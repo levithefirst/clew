@@ -2,6 +2,7 @@ import { AUTH_STATUS } from "@/auth";
 import { SiteHeader } from "@/components/site-header";
 import { Hero } from "@/components/hero";
 import { HowItWorks } from "@/components/how-it-works";
+import { TryIt } from "@/components/try-it";
 import { SideBySide } from "@/components/side-by-side";
 import { ExampleSection } from "@/components/example-section";
 import { Cta } from "@/components/cta";
@@ -13,6 +14,7 @@ export default function Page() {
       <SiteHeader auth={AUTH_STATUS} />
       <main id="main">
         <Hero />
+        <TryIt />
         <SideBySide />
         <HowItWorks />
         <ExampleSection />

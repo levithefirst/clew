@@ -15,6 +15,10 @@ export default function Privacy() {
       <p>
         Only what makes the site work: the sign-in session and its short-lived security cookies, a cookie that remembers you’ve seen the welcome message, and your light/dark theme choice in local storage. No advertising or tracking cookies.
       </p>
+      <h2>Try it</h2>
+      <p>
+        A transaction hash you paste is used to read public chain data through Tatum and to search Walrus Memory. The page only reads: it never writes a memory, and we don’t store what you paste.
+      </p>
       <h2>On-chain data</h2>
       <p>
         The examples on this site are public Mainnet transactions read through Tatum RPC. The memories are stored in Walrus Memory. Neither contains anything about you as a site visitor.

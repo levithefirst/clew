@@ -8,12 +8,14 @@
     "build": "next build",
     "start": "next start -p 3141",
     "typecheck": "tsc --noEmit",
-    "data": "node scripts/build-data.mjs"
+    "data": "node scripts/build-data.mjs",
+    "sync-core": "node scripts/sync-core.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@mysten-incubation/memwal": "^0.1.13",
     "clsx": "^2.1.1",
     "lucide-react": "^1.62.0",
     "next": "^16.4.3",

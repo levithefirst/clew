@@ -48,6 +48,20 @@ export function NextAction({ action: a, className }: { action: Action; className
             </ul>
           </Step>
         )}
+        {a.inputs && a.inputs.length > 0 && (
+          <Step>
+            Change the transaction inputs like the retry
+            <ul className="mt-1.5 space-y-1 font-mono text-[0.75rem]">
+              {a.inputs.map((i) => (
+                <li key={i.index} className="flex flex-wrap gap-x-2">
+                  <span className="text-ink-4">input {i.index}</span>
+                  <span className="text-ink" title={i.to}>{clip(i.to)}</span>
+                  <span className="text-ink-4 line-through decoration-fail/50" title={i.from}>{clip(i.from)}</span>
+                </li>
+              ))}
+            </ul>
+          </Step>
+        )}
         {a.resubmit && <Step>Same calldata and gas; the retry landed {a.resubmit} later. Resubmitting may be enough.</Step>}
         {a.gasLimit && (
           <Step>

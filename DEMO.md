@@ -20,7 +20,7 @@ Open https://clew-eight.vercel.app. One line: "A transaction reverts. Next time 
 npm test
 ```
 
-Expected: `# pass 31`, `# fail 0`. The suite covers revert decoding, the gas gate, the bounded memory format, the wallet classifier, the watcher (reorg + resume on a fixture stream), the live demo against a fake Base chain, and the Sui adapter (real responses recorded on 2026-10-31 plus labelled synthetic history).
+Expected: `# pass 38`, `# fail 0`. The suite covers revert decoding, the gas gate, the bounded memory format, the wallet classifier, the watcher (reorg + resume on a fixture stream), the live demo against a fake Base chain, and the Sui adapter (real responses recorded on 2026-10-31 plus labelled synthetic history).
 
 ## 0:30 to 1:05 The same failure, without and with memory (a few seconds each)
 

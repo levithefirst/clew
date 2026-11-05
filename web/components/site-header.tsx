@@ -7,6 +7,7 @@ import { UserMenu, MobileUserMenu } from "@/components/user-menu";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { href: "/try", label: "Try it" },
   { href: "/#how", label: "How it works" },
   { href: "/#example", label: "Example" },
 ];
