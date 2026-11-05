@@ -82,8 +82,8 @@ for (const m of demo.matchAll(re)) {
     source: "npm run demo (Mainnet)",
   });
 }
-// Recalls run outside the demo script, recorded with what was reported (fixtures/sui-recall-*.json).
-for (const f of readdirSync(join(root, "fixtures")).filter((f) => /^sui-recall-.*\.json$/.test(f))) {
+// Recalls run outside the demo script, recorded from what the run returned (fixtures/*-recall-*.json).
+for (const f of readdirSync(join(root, "fixtures")).filter((f) => /-recall-.*\.json$/.test(f))) {
   for (const r of JSON.parse(readFileSync(join(root, "fixtures", f), "utf8")).recalls) {
     const mem = out.find((o) => o.success_tx === r.prior_success);
     if (!mem || mem.blob_id !== r.blob_id) throw new Error(`${f}: recall of ${r.failure_tx} does not match a memory on file`);
@@ -99,7 +99,13 @@ const cf = demo.match(/counterfactual: other wallet (0x[0-9a-f]+) failing on rem
 const counterfactual = cf && { wallet: cf[1], contract: cf[2], result: undash(cf[3].trim()) };
 
 const chains = [...new Set(out.map((o) => o.chain))];
+// The featured example: a low-activity wallet (no automation signal) whose retry changed a calldata word, on Base or
+// Ethereum, with a later failure from the same wallet to check. The rule is explicit so the page never hand-picks.
+const featuredMem = out.find((o) => ["base", "ethereum"].includes(o.chain) && o.wallet_class?.label === "human-like" && o.diff.argsChanged >= 1 && o.next_failure);
+const featured = featuredMem ? { memory_key: featuredMem.key, failure_tx: featuredMem.next_failure, chain: featuredMem.chain } : null;
+
 const stats = {
+  featured,
   memories: out.length,
   chains: chains.length,
   chain_names: chains,
@@ -117,5 +123,5 @@ for (const o of out) if (!o.wallet_class) throw new Error(`${o.key} has no walle
 // Headline preference: human-like wallets first (stable otherwise). The site's hero uses recalls[0].
 const isHuman = (key) => classes[key]?.label === "human-like";
 recalls.sort((a, b) => Number(isHuman(b.memory_key)) - Number(isHuman(a.memory_key)));
-writeFileSync(join(root, "web", "data", "clew.json"), JSON.stringify({ generated_from: ["memories.json", "demo-output.txt", "fixtures/pairs.json", "fixtures/wallet-classes.json", "fixtures/sui-recall-*.json"], stats, memories: out, recalls, counterfactual }, null, 2) + "\n");
+writeFileSync(join(root, "web", "data", "clew.json"), JSON.stringify({ generated_from: ["memories.json", "demo-output.txt", "fixtures/pairs.json", "fixtures/wallet-classes.json", "fixtures/*-recall-*.json"], stats, memories: out, recalls, counterfactual }, null, 2) + "\n");
 console.log(stats, recalls.length, !!counterfactual);

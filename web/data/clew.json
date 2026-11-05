@@ -4,9 +4,14 @@
     "demo-output.txt",
     "fixtures/pairs.json",
     "fixtures/wallet-classes.json",
-    "fixtures/sui-recall-*.json"
+    "fixtures/*-recall-*.json"
   ],
   "stats": {
+    "featured": {
+      "memory_key": "ethereum:0xd55c0f54b9b10b56cf83ec4c919224adca39c5ffd825486129f95c4f850b8a20:0x539321141eb96164edb752ec9217abfe86352a85cba891e3cde7998858dd7565",
+      "failure_tx": "0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade",
+      "chain": "ethereum"
+    },
     "memories": 14,
     "chains": 4,
     "chain_names": [

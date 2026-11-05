@@ -52,6 +52,8 @@ export interface Recall {
 
 export const DATA = raw as unknown as {
   stats: {
+    /** The non-bot example the page shows first (build-data.mjs picks it by rule); null if none qualifies. */
+    featured: { memory_key: string; failure_tx: string; chain: Chain } | null;
     memories: number;
     chains: number;
     chain_names: Chain[];

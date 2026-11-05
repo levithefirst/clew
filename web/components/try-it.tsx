@@ -15,18 +15,23 @@ type ViewAnswer = Omit<Answer, "memory"> & { memory: null | (Omit<Memory, "nextA
 type Done = { answer: ViewAnswer; recorded: boolean };
 type State = { phase: "idle" } | { phase: "loading" } | { phase: "done"; done: Done } | { phase: "error"; message: string };
 
-interface Example { chain: Chain; hash: string; label: string; human: boolean }
+interface Example { chain: Chain; hash: string; label: string; featured: boolean }
 
-/** Real repeat failures from the Mainnet runs: the ones Clew has recalled, plus the one human-like wallet. */
+const label = (c: Chain, detail: string | null, err: string) => `${CHAIN_LABEL[c]}: ${(detail ?? err).replace(/^Error in .*$/, "Move abort").slice(0, 26)}`;
+const FEATURED = (() => {
+  const f = DATA.stats.featured;
+  const m = f && DATA.memories.find((x) => x.key === f.memory_key);
+  return f && m ? { f, m } : null;
+})();
+
+/** Real repeat failures from the Mainnet runs, the featured non-bot one first. */
 const EXAMPLES: Example[] = (() => {
-  const label = (c: Chain, detail: string | null, err: string) => `${CHAIN_LABEL[c]}: ${(detail ?? err).replace(/^Error in .*$/, "Move abort").slice(0, 26)}`;
-  const out: Example[] = DATA.recalls.map((r) => {
+  const out: Example[] = [];
+  if (FEATURED) out.push({ chain: FEATURED.f.chain, hash: FEATURED.f.failure_tx, label: label(FEATURED.f.chain, FEATURED.m.error_detail, FEATURED.m.error), featured: true });
+  for (const r of DATA.recalls) {
+    if (out.some((e) => e.hash === r.failure_tx)) continue;
     const m = DATA.memories.find((x) => x.key === r.memory_key)!;
-    return { chain: r.chain, hash: r.failure_tx, label: label(r.chain, m.error_detail, r.error), human: false };
-  });
-  const human = DATA.memories.find((m) => m.wallet_class.label === "human-like" && m.next_failure);
-  if (human?.next_failure && !out.some((e) => e.hash === human.next_failure)) {
-    out.push({ chain: human.chain, hash: human.next_failure, label: label(human.chain, human.error_detail, human.error), human: true });
+    out.push({ chain: r.chain, hash: r.failure_tx, label: label(r.chain, m.error_detail, r.error), featured: false });
   }
   return out;
 })();
@@ -133,10 +138,16 @@ export function TryIt({ heading = "h2" }: { heading?: "h1" | "h2" }) {
                 className="cursor-pointer rounded-lg border border-line-strong bg-raised px-3 py-1.5 text-small text-ink-2 hover:bg-fill-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {e.label}
-                {e.human && <span className="ml-1.5 text-label text-ink-4">human-like wallet</span>}
+                {e.featured && <span className="ml-1.5 text-label text-brand">featured</span>}
               </button>
             ))}
           </div>
+
+          {FEATURED && (
+            <p className="mt-4 text-small text-ink-3 text-pretty">
+              <span className="font-[580] text-ink-2">Featured:</span> a {CHAIN_LABEL[FEATURED.f.chain]} wallet ({short(FEATURED.m.wallet, 6, 4)}) with no automation signal ({FEATURED.m.wallet_class.reasons[0].replace(/^no automation signal: /, "")}). Its retry changed {FEATURED.m.diff.argsChanged === 1 ? "one calldata word" : `${FEATURED.m.diff.argsChanged} calldata words`}, not just gas.
+            </p>
+          )}
 
           <p className="mt-4 text-label text-ink-4 text-pretty">
             Honest note: most fast fail-and-retry wallets in the current set are bots ({bot_like} of the {memories} remembered wallets are bot-like by Clew’s heuristic), so these examples show the mechanism, not typical users. Clew only remembers a wallet’s own earlier fix.
