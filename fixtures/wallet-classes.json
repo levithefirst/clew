@@ -107,5 +107,13 @@
     "reasons": [
       "no account nonce on sui, so only retry latency was checked: retried ~106s after failing"
     ]
+  },
+  "base:0x15f0e33c6bcaae91577346de3efac3680848b1158407ee77dbc6d743361ac153:0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03:r2": {
+    "wallet": "0x336a079d7b894f6b6356674b3ad668bffdd5811d",
+    "label": "bot-like",
+    "reasons": [
+      "58,508 prior transactions",
+      "32 calls to this contract in ~5 min (6 failed)"
+    ]
   }
 }
