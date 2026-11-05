@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60; // a failure read and two calldata reads (about 7 Tatum calls at the free plan's 360 ms spacing), plus one Walrus recall
 
 // Agents call this from servers, but browsers may too (the /try page does, same-origin). Read-only, so any origin may read.
-const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "POST, OPTIONS", "access-control-allow-headers": "content-type" };
+const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "POST, GET, OPTIONS", "access-control-allow-headers": "content-type" };
 const STATUS: Record<ClewErrorCode | "rate_limited" | "unconfigured", number> = {
   bad_input: 400, not_found: 404, not_a_failure: 422, upstream: 502, sui_disabled: 501, rate_limited: 429, unconfigured: 503,
 };
@@ -34,6 +34,16 @@ export function OPTIONS() {
 export async function POST(req: Request) {
   let body: unknown;
   try { body = await req.json(); } catch { return fail("bad_input", "Send a JSON body: { chain, failedTxHash, agentId? }."); }
+  return recall(req, body);
+}
+
+/** The same read-only call as a link: GET /v1/recall?chain=base&failedTxHash=0x…&agentId=… (shareable, and checkable without a client). */
+export async function GET(req: Request) {
+  const q = new URL(req.url).searchParams;
+  return recall(req, { chain: q.get("chain") ?? undefined, failedTxHash: q.get("failedTxHash") ?? undefined, agentId: q.get("agentId") ?? undefined });
+}
+
+async function recall(req: Request, body: unknown): Promise<Response> {
   let parsed: ReturnType<typeof parseRecallRequest>;
   try { parsed = parseRecallRequest(body); } catch (e) { return fail("bad_input", e instanceof Error ? e.message : "Bad request."); }
 

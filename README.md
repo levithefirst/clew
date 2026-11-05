@@ -58,7 +58,7 @@ The example buttons are real repeat failures from the Mainnet runs, with the **f
 One call in, one JSON object out (no prose). It runs the same recall and ranking as the Try it box and adds an action, a concrete retry and a confidence for the path.
 
 ```
-POST https://clew-eight.vercel.app/v1/recall
+POST https://clew-eight.vercel.app/v1/recall     (GET with ?chain=&failedTxHash= works too, read-only)
 { "chain": "base" | "ethereum" | "polygon" | "sui", "failedTxHash": "0x…", "agentId": "optional" }
 ->
 { "action": "retry" | "abort" | "abstain",
