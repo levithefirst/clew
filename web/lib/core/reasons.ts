@@ -21,3 +21,35 @@ export function explainError(errorSig: string | undefined, errorDetail: string |
   return { text: `The contract refused the call${code}. Clew can't translate this error without the contract's source code, so it shows what the contract said.`, known: false };
 }
 
+
+export interface Change {
+  /** What differed in the call itself. Empty when the retry was byte for byte the same call. */
+  changed: string[];
+  /** Gas differences, reported as facts. They are shown apart because a higher limit or price is rarely the cause. */
+  alsoDiffered: string[];
+}
+
+const n = (v: string) => Number(v).toLocaleString("en-US");
+const words = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+
+/**
+ * Reads the "Change: ..." sentence of a stored memory (any format Clew has written) into short facts.
+ * Nonce and gas used are left out: they differ on every retry and say nothing about what to do.
+ */
+export function summarizeChange(change?: string): Change {
+  const text = change ?? "";
+  const changed: string[] = [], alsoDiffered: string[] = [];
+  const fn = text.match(/function (0x[0-9a-f]+) -> (0x[0-9a-f]+)/);
+  if (fn) changed.push(`function ${fn[1]} \u2192 ${fn[2]}`);
+  const calldata = text.match(/(\d+) arg word\(s\) changed/);
+  if (calldata) changed.push(words(Number(calldata[1]), "calldata word"));
+  const calls = text.match(/Move calls (.+?) -> (.+?);/);
+  if (calls) changed.push(`Move calls ${calls[1]} \u2192 ${calls[2]}`);
+  const pure = text.match(/(\d+) pure input\(s\) changed/) ?? text.match(/(\d+) input\(s\) changed/);
+  if (pure) changed.push(words(Number(pure[1]), "pure input"));
+  const limit = text.match(/gas limit (\d+) vs (\d+)/);
+  if (limit && limit[1] !== limit[2]) alsoDiffered.push(`gas limit ${n(limit[2])} \u2192 ${n(limit[1])}`);
+  const price = text.match(/gas price (\d+) vs (\d+)/);
+  if (price && price[1] !== price[2]) alsoDiffered.push(`gas price ${n(price[2])} \u2192 ${n(price[1])}`);
+  return { changed, alsoDiffered };
+}

@@ -28,14 +28,18 @@ EVM memories written before this format (all 12 on Walrus today) omit the gas pr
 
 ## Try it (the website)
 
-https://clew-eight.vercel.app has a **Try it** box: paste a failed transaction hash (Base, Ethereum, Polygon or a Sui digest) and Clew finds the chain, reads the receipt through Tatum, explains the failure in one plain sentence, and shows two answers produced by the same run: what it says with an empty Walrus namespace, and what it says from the real `clew` namespace. The example buttons are real repeat failures from the Mainnet runs, including the one human-like wallet.
+https://clew-eight.vercel.app has a **Try it** box (also at `/try`): paste a failed transaction hash (Base, Ethereum, Polygon or a Sui digest) and Clew finds the chain, reads the receipt through Tatum, and shows two columns produced by the same run:
 
-- **Where the logic lives:** `src/explain.ts` (`checkFailure`, `teach`) and `src/reasons.ts` (plain-English reasons). The website's API routes call them: `POST /api/check` is read-only; `POST /api/teach` is off unless `CLEW_ALLOW_TEACH=1`.
-- **Teaching:** pasting the transaction that fixed a failure writes one memory, after Clew verifies on chain that the failure failed, the retry succeeded, both are from the same wallet to the same contract, and the retry came after the failure and within a day. A pair that doesn't verify never reaches Walrus. Walrus memories can't be deleted, and the page says so.
-- **Server settings** (Vercel project, names only): `TATUM_API_KEY`, `MEMWAL_KEY`, `MEMWAL_ACCOUNT_ID` switch live lookups on; `CLEW_ALLOW_TEACH=1` switches teaching on. Without the three keys the box falls back to the recorded run for the example buttons, labelled as recorded, and shows a plain message for anything else. The memwal delegate key can write to its Walrus account, so use a dedicated delegate key for the website and leave teaching off unless you want visitors writing memories.
-- **Limits:** lookups are rate-limited per server instance (6 a minute) and answers are cached for 5 minutes; teaching is limited to 3 an hour per visitor and 20 a day per instance. Those limits are best-effort on serverless, not a hard cap.
+- **Memory off:** what Clew says with an empty Walrus namespace, a generic "reverted" message, plus a one-sentence plain-English reason.
+- **Memory on:** the retry that worked before (source transaction), what changed in it, the copyable next action, and the Walrus blob id. If the wallet has no memory on that contract, both columns say so.
+
+The example buttons are real repeat failures from the Mainnet runs, including the one human-like wallet. The page only reads; it never writes a memory.
+
+- **Where the logic lives:** `src/explain.ts` (`checkFailure`) and `src/reasons.ts` (plain-English reasons and the "what changed" summary). `POST /api/check` is the only route.
+- **Server settings** (Vercel project, names only): `TATUM_API_KEY`, `MEMWAL_KEY`, `MEMWAL_ACCOUNT_ID`. Without them the box falls back to the recorded run for the example buttons, labelled as recorded, and shows a plain message for any other hash. The memwal delegate key can write to its Walrus account, so give the website a dedicated delegate key.
+- **Limits:** lookups are rate-limited per server instance (6 a minute) and answers are cached for 5 minutes. Best-effort on serverless, not a hard cap.
 - **The vendored core:** Vercel builds `web/` with its own install, so the API can't import `../src`. `web/lib/core/` is a generated copy (`npm run sync-core` in `web/`), and `tests/core-sync.test.ts` fails if it drifts.
-- **What a first-time visitor will see:** Clew's memory is scoped to the exact wallet and contract, so a wallet's first-ever failure gets the plain explanation and "no memory yet". It helps on a repeat failure, which is when the memory changes the answer.
+- **What a first-time visitor will see:** Clew's memory is scoped to the exact wallet and contract, so a wallet's first-ever failure gets the plain explanation and "no memory". It changes the answer on a repeat failure.
 
 ## Setup
 

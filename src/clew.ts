@@ -198,13 +198,12 @@ export function memoryText(f: Attempt, s: Attempt, d: Diff, rev = 1): string {
 export const memoryKey = (chain: string, failed: string, success: string, rev = 1) => `${chain}:${failed}:${success}${rev > 1 ? `:r${rev}` : ""}`;
 
 // ---------- retry: record + watch ----------
-export async function recordRetry(chain: string, failedHash: string, successHash: string, store: MemoryStore = walrus, rev = 1, guard?: (f: Attempt, s: Attempt) => void) {
+export async function recordRetry(chain: string, failedHash: string, successHash: string, store: MemoryStore = walrus, rev = 1) {
   const f = await recordFailure(chain, failedHash);
   const s = await loadAttempt(chain, successHash);
   if (s.status !== "success") throw new Error(`${successHash} is not a success`);
   if (s.wallet !== f.wallet || s.contract !== f.contract) throw new Error("retry must be same wallet -> same contract");
   if (s.block < f.block) throw new Error("retry must come after the failure");
-  guard?.(f, s);
   const d = diffAttempts(f, s), text = memoryText(f, s, d, rev);
   const w = await store.remember(text, memoryKey(chain, f.hash, s.hash, rev));
   return { failure: f, success: s, diff: d, text, ...w };

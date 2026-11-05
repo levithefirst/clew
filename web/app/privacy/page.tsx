@@ -17,7 +17,7 @@ export default function Privacy() {
       </p>
       <h2>Try it</h2>
       <p>
-        A transaction hash you paste is used to read public chain data through Tatum and to search Walrus Memory. We don’t store it. If teaching is switched on and you use it, Clew writes the verified pair (two public transaction hashes plus the wallet and contract addresses) to Walrus Memory. <strong>A Walrus memory can’t be deleted</strong>, so only teach Clew about transactions you are happy to have remembered.
+        A transaction hash you paste is used to read public chain data through Tatum and to search Walrus Memory. The page only reads: it never writes a memory, and we don’t store what you paste.
       </p>
       <h2>On-chain data</h2>
       <p>

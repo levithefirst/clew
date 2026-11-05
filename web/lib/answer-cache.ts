@@ -1,6 +1,6 @@
 import type { Answer } from "@/lib/core/explain";
 
-/** Five-minute cache of check answers, per server instance. Teaching clears it: a new memory changes later answers. */
+/** Five-minute cache of check answers, per server instance. */
 const TTL_MS = 5 * 60_000;
 const entries = new Map<string, { at: number; answer: Answer }>();
 
@@ -12,4 +12,3 @@ export const cacheAnswer = (key: string, answer: Answer) => {
   if (entries.size > 200) entries.clear();
   entries.set(key, { at: Date.now(), answer });
 };
-export const clearAnswers = () => entries.clear();

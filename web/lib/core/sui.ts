@@ -167,13 +167,12 @@ export function suiMemoryText(f: SuiAttempt, s: SuiAttempt): string {
     `Successful retry in tx ${s.hash} at block ${s.checkpoint}, ${s.checkpoint - f.checkpoint} blocks later. Change: ${changes}. NEXT_ACTION: ${next}`;
 }
 
-export async function recordSuiRetry(failed: string, success: string, store: MemoryStore = walrus, guard?: (f: SuiAttempt, s: SuiAttempt) => void) {
+export async function recordSuiRetry(failed: string, success: string, store: MemoryStore = walrus) {
   const f = await loadSuiAttempt(failed), s = await loadSuiAttempt(success);
   if (f.status !== "failure") throw new Error(`${failed} succeeded, not a failure`);
   if (s.status !== "success") throw new Error(`${success} is not a success`);
   if (s.wallet !== f.wallet || !s.calls.some((c) => modulePath(c) === f.contract)) throw new Error("retry must be the same sender calling the same package::module");
   if (s.checkpoint < f.checkpoint) throw new Error("retry must come after the failure");
-  guard?.(f, s);
   const text = suiMemoryText(f, s);
   return { failure: f, success: s, text, ...(await store.remember(text, memoryKey(SUI, f.hash, s.hash))) };
 }

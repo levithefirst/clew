@@ -1,10 +1,12 @@
 // The "Try it" product logic against a mocked chain (SYNTHETIC txs, fake addresses) and an in-memory store:
 // input handling, chain detection, plain-English reasons (on real error signatures from memories.json), the
-// with/without-memory answer, and the guards that keep a bad pair from ever reaching Walrus.
+// with/without-memory answer, and the "what changed" summary (checked on the real stored memories).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setRpc } from "../src/tatum.ts";
-import { ClewError, checkFailure, detectTarget, explainError, teach, findEvmChain } from "../src/explain.ts";
+import { ClewError, checkFailure, detectTarget, explainError, summarizeChange, findEvmChain } from "../src/explain.ts";
+import { recordRetry } from "../src/clew.ts";
+import { readFileSync } from "node:fs";
 import type { MemoryStore, Recalled } from "../src/memory.ts";
 
 const W = "0x" + "a".repeat(40), W2 = "0x" + "b".repeat(40), C = "0x" + "c".repeat(40);
@@ -78,7 +80,7 @@ test("chain detection probes Base, Ethereum, Polygon in order and stops at the f
   await assert.rejects(findEvmChain(H(99)), (e: any) => e.code === "not_found");
 });
 
-test("answer: no memory -> generic message and no memory; after teaching -> the later failure gets the prior path", async () => {
+test("answer: no memory -> generic message and no memory; once a pair is remembered -> the later failure gets the prior path", async () => {
   const { store, mem } = memoryStore();
   const before = await checkFailure(H(3), { store });
   assert.equal(before.chain, "base");
@@ -86,13 +88,13 @@ test("answer: no memory -> generic message and no memory; after teaching -> the 
   assert.match(before.without, /reverted \(revert:too_little_received\)\. No prior successful path/);
   assert.match(before.reason.text, /slippage limit/);
 
-  const taught = await teach(H(1), H(2), { store });
-  assert.deepEqual([taught.chain, taught.failedTx, taught.successTx, taught.alreadyStored], ["base", H(1), H(2), false]);
+  await recordRetry("base", H(1), H(2), store); // the pair Clew learns from (the website itself never writes)
   assert.equal(mem.length, 1);
 
   const after = await checkFailure(H(3), { store });
   assert.equal(after.memory?.successTx, H(2));
   assert.equal(after.memory?.blobId, "blob1");
+  assert.deepEqual(after.memory?.changed.changed, ["1 calldata word"]);
   assert.match(after.memory!.suggestion, /arg word 1 = 0x3b6 \(was 0x3de\)/); // the retry (950) against the remembered failure (990)
   assert.equal(after.without, before.without); // the empty-namespace answer is unchanged by the memory
   // another wallet on the same contract still gets nothing: the path is never borrowed
@@ -106,15 +108,20 @@ test("answer: errors a visitor can read", async () => {
   await assert.rejects(checkFailure("nope", { store }), (e: any) => e.code === "bad_input");
 });
 
-test("teach refuses anything that isn't a real pair, before writing", async () => {
-  const { store, mem } = memoryStore();
-  const refused = (a: string, b: string, code: string, re?: RegExp) =>
-    assert.rejects(teach(a, b, { store }), (e: any) => e.code === code && (!re || re.test(e.message)));
-  await refused(H(1), H(1), "mismatch", /two different/);
-  await refused(H(1), H(5), "mismatch", /same wallet/);       // other wallet's success
-  await refused(H(1), H(2 + 0x100), "not_found");               // the second tx does not exist
-  await refused(H(2), H(6), "not_a_failure");                   // first one succeeded
-  await refused(H(1), H(3), "mismatch", /not a success/);       // second one failed
-  await refused(H(1), H(6), "mismatch", /more than a day/);     // a "retry" 49,900 blocks (~28 h) later
-  assert.equal(mem.length, 0, "nothing reached Walrus");
+const stored = (needle: string): string =>
+  Object.values<any>(JSON.parse(readFileSync("memories.json", "utf8"))).find((m) => m.text.includes(needle)).text.match(/Change: (.*?)\. NEXT_ACTION/s)![1];
+
+test("what changed: real stored memories, in every format Clew has written", () => {
+  // Base #1 (original format): 4 calldata words changed; the retry also had a higher gas limit.
+  assert.deepEqual(summarizeChange(stored("success_tx=0x389a50464dd3")), { changed: ["4 calldata words"], alsoDiffered: ["gas limit 246,588 \u2192 276,625"] });
+  // Base 0x87..: the function itself changed.
+  assert.deepEqual(summarizeChange(stored("success_tx=0x82d2caf4")).changed.slice(0, 2), ["function 0x00000002 \u2192 0x00000011", "18 calldata words"]);
+  // Sui, written before inputs were qualified: "inputs identical" must not turn into a claim of change.
+  const sui = summarizeChange(stored("success_tx=ByGXz3iXES3N"));
+  assert.deepEqual(sui.changed, []);
+  assert.deepEqual(sui.alsoDiffered, ["gas limit 6,410,000 \u2192 20,038,000", "gas price 3,410 \u2192 17,038"]);
+  assert.deepEqual(summarizeChange(undefined), { changed: [], alsoDiffered: [] });
+  // Newer wording: gas price present, calldata identical, one pure Sui input changed.
+  assert.deepEqual(summarizeChange("gas limit 5 vs 5; gas price 2 vs 1 wei; calldata 36 -> 36 bytes; calldata identical"), { changed: [], alsoDiffered: ["gas price 1 \u2192 2"] });
+  assert.deepEqual(summarizeChange("same 2 Move call(s); inputs 3 -> 3, 2 Pure (object inputs not compared); 1 pure input(s) changed (input 1 0xe803 -> 0xd007)").changed, ["1 pure input"]);
 });

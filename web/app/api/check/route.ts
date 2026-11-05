@@ -1,5 +1,5 @@
 import "@/lib/server-env";
-import { liveConfigured, teachEnabled } from "@/lib/server-env";
+import { liveConfigured } from "@/lib/server-env";
 import { limiter, clientKey } from "@/lib/rate-limit";
 import { cachedAnswer, cacheAnswer } from "@/lib/answer-cache";
 import { checkFailure, ClewError } from "@/lib/core/explain";
@@ -10,10 +10,10 @@ export const maxDuration = 60; // ~8 Tatum calls at the free plan's 360 ms spaci
 
 const perMinute = limiter(6, 60_000);
 
-const STATUS = { bad_input: 400, not_found: 404, not_a_failure: 422, mismatch: 422, upstream: 502 } as const;
+const STATUS = { bad_input: 400, not_found: 404, not_a_failure: 422, upstream: 502 } as const;
 const json = (body: unknown, status = 200, headers?: HeadersInit) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 
-/** POST { input: string, chain?: "base" | "ethereum" | "polygon" } -> { ok, answer, canTeach } | { ok: false, code, message } */
+/** POST { input: string, chain?: "base" | "ethereum" | "polygon" } -> { ok, answer } | { ok: false, code, message }. Read-only. */
 export async function POST(req: Request) {
   let body: { input?: unknown; chain?: unknown };
   try { body = await req.json(); } catch { return json({ ok: false, code: "bad_input", message: "Send a JSON body with an input field." }, 400); }
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
   const key = `${chain ?? ""}:${body.input.trim().toLowerCase()}`;
   const hit = cachedAnswer(key);
-  if (hit) return json({ ok: true, answer: hit, canTeach: teachEnabled(), cached: true });
+  if (hit) return json({ ok: true, answer: hit, cached: true });
 
   const wait = perMinute.take(clientKey(req));
   if (wait) return json({ ok: false, code: "rate_limited", message: `Slow down a little: try again in ${wait} seconds.` }, 429, { "retry-after": String(wait) });
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   try {
     const answer = await checkFailure(body.input, { chain });
     cacheAnswer(key, answer);
-    return json({ ok: true, answer, canTeach: teachEnabled(), cached: false });
+    return json({ ok: true, answer, cached: false });
   } catch (e) {
     if (e instanceof ClewError) return json({ ok: false, code: e.code, message: e.message }, STATUS[e.code]);
     console.error("[check]", e instanceof Error ? e.message : e); // message only: never log request headers or keys
