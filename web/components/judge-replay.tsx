@@ -4,13 +4,13 @@ import { useMemo, useState } from "react";
 import { DATA, CHAIN_LABEL, txUrl, blobUrl, explorerName, type Chain, type Recall } from "@/lib/data";
 import { short } from "@/lib/utils";
 
-const REPLAYS = DATA.recalls.filter((r) => r.without_memory && r.chain !== "sui");
+const REPLAYS = DATA.recalls;
 const DEFAULT_REPLAY = REPLAYS.find((r) => {
   const memory = DATA.memories.find((m) => m.key === r.memory_key);
   return memory?.wallet_class.label === "human-like";
 }) ?? REPLAYS[0];
 
-const CHAINS: Chain[] = ["base", "ethereum", "polygon"];
+const CHAINS: Chain[] = ["base", "ethereum", "polygon", "sui"];
 
 export function JudgeReplay() {
   const [chain, setChain] = useState<Chain>(DEFAULT_REPLAY.chain);
@@ -31,8 +31,10 @@ export function JudgeReplay() {
     const found = REPLAYS.find((r) => r.chain === chain && r.failure_tx.toLowerCase() === normalized);
     setResult(found ?? null);
     setMessage(found
-      ? "Matched a recorded Mainnet failure. The two answers below are from Clew's captured run."
-      : "No recorded replay matches this chain and transaction hash. This demo contains 9 repeat failures with an explicit memory-off comparison; it does not perform a live RPC lookup.");
+      ? found.without_memory
+        ? "Matched a recorded Mainnet failure. Both answers below come from Clew's captured run."
+        : "Matched the recorded Sui Mainnet recall. The memory-on result is verified; an empty-namespace baseline was not captured for this transaction."
+      : "No recorded replay matches this chain and transaction hash. This is a lookup against Clew's 10 captured Mainnet replays, not a live RPC lookup.");
   }
 
   function loadExample(nextChain: Chain) {
@@ -54,7 +56,7 @@ export function JudgeReplay() {
             Put in a failure. See what memory changes.
           </h2>
           <p className="mt-4 text-body text-ink-3 text-pretty">
-            Enter a transaction hash from one of Clew's recorded repeat failures. Replay the same failure with an empty memory and with the confirmed Walrus memory. Nothing is signed or broadcast.
+            Enter a transaction hash from one of Clew's recorded repeat failures. EVM examples show the empty-memory answer beside the confirmed Walrus recall. The Sui example shows its confirmed recall; its empty-memory baseline was not captured. Nothing is signed or broadcast.
           </p>
         </div>
 
@@ -88,7 +90,7 @@ export function JudgeReplay() {
                 spellCheck={false}
                 autoCapitalize="none"
                 autoComplete="off"
-                placeholder="0x…"
+                placeholder="Transaction hash or Sui digest"
                 className="h-11 min-w-0 rounded-lg border border-line-strong bg-canvas px-3 font-mono text-small text-ink placeholder:text-ink-4"
               />
             </label>
@@ -112,10 +114,18 @@ export function JudgeReplay() {
           <div className="mt-5 grid gap-4 md:grid-cols-2" aria-live="polite">
             <article className="card min-w-0 p-5 sm:p-6">
               <p className="eyebrow">Without memory</p>
-              <p className="mt-3 break-words rounded-lg border border-dashed bg-fill/50 p-3 font-mono text-[0.78rem] leading-relaxed text-ink-3">
-                {result.without_memory}
-              </p>
-              <p className="mt-4 text-label text-ink-4">Generic failure response. No previous successful path is available.</p>
+              {result.without_memory ? (
+                <>
+                  <p className="mt-3 break-words rounded-lg border border-dashed bg-fill/50 p-3 font-mono text-[0.78rem] leading-relaxed text-ink-3">
+                    {result.without_memory}
+                  </p>
+                  <p className="mt-4 text-label text-ink-4">Generic failure response. No previous successful path is available.</p>
+                </>
+              ) : (
+                <p className="mt-3 rounded-lg border border-dashed bg-fill/50 p-3 text-small text-ink-3">
+                  An empty-namespace run was not captured for this Sui transaction. Clew does not invent a baseline.
+                </p>
+              )}
             </article>
 
             <article className="card min-w-0 border-brand/40 bg-brand-soft/50 p-5 sm:p-6">
@@ -132,7 +142,7 @@ export function JudgeReplay() {
               </div>
             </article>
             <p className="text-label text-ink-4 md:col-span-2">
-              Recorded replay from {result.source}. Wallet classification: {memory.wallet_class.label}. {memory.wallet_class.reasons.join("; ")}. The result is a historical Mainnet replay, not a live RPC request.
+              Recorded replay from {result.source}. Wallet classification: {memory.wallet_class.label}. {memory.wallet_class.reasons.join("; ")}. This is a historical Mainnet replay, not a live RPC request.
             </p>
           </div>
         )}
