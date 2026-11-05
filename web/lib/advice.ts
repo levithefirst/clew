@@ -28,6 +28,8 @@ export function evidenceLines(e: Evidence): string[] {
     const [top, ...rest] = e.ranked;
     out.push(`- Most consistent change: ${top.label}, in ${of(top)} earlier retries that succeeded after this same error.`);
     for (const r of rest) if (r.count >= 2) out.push(`- Also seen: ${r.label}, in ${of(r)}.`);
+  } else if (e.ranked.some((r) => r.count >= 2)) {
+    out.push(`- ${e.total} earlier retries succeeded after this same error. The change that repeated across them was followed by a later failure, so the best-supported retry is shown instead.`);
   } else {
     out.push(`- ${e.total} earlier retries succeeded after this same error and no single change repeated across them. Showing the most recent.`);
   }

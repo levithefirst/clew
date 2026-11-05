@@ -14,7 +14,9 @@
     "watch": "tsx scripts/watch.ts",
     "live-demo": "tsx scripts/live-demo.ts",
     "sui": "tsx scripts/sui.ts",
-    "sui:check": "tsx scripts/sui.ts check"
+    "sui:check": "tsx scripts/sui.ts check",
+    "measure": "tsx scripts/measure.ts",
+    "recall": "tsx scripts/recall.ts"
   },
   "keywords": [],
   "author": "",

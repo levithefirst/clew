@@ -16,7 +16,7 @@ export const EVM_CHAINS = ["base", "ethereum", "polygon"] as const;
 /** Recalling from here finds nothing, which is exactly the "no memory" answer. */
 export const EMPTY_NAMESPACE = "clew-counterfactual-empty";
 
-export type ClewErrorCode = "bad_input" | "not_found" | "not_a_failure" | "upstream";
+export type ClewErrorCode = "bad_input" | "not_found" | "not_a_failure" | "upstream" | "sui_disabled";
 
 /** An error whose message is safe to show a visitor. */
 export class ClewError extends Error {
@@ -70,7 +70,7 @@ export interface Answer {
 
 export interface CheckOptions { chain?: string; store?: MemoryStore }
 
-const blockOf = (f: Attempt | SuiAttempt) => ("block" in f ? f.block : f.checkpoint);
+const blockOf = (f: Attempt | SuiAttempt) => ("checkpoint" in f ? f.checkpoint : f.block);
 
 async function loadFailure(target: Target, chain?: string): Promise<{ chain: string; f: Attempt | SuiAttempt }> {
   try {

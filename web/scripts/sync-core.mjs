@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const FILES = ["tatum", "memory", "clew", "sui", "reasons", "explain"];
+export const FILES = ["tatum", "memory", "clew", "sui", "reasons", "explain", "agent", "measure"];
 const target = (name) => join(root, "web", "lib", "core", `${name}.ts`);
 export const expected = (name) =>
   `// GENERATED from src/${name}.ts by web/scripts/sync-core.mjs. Do not edit here; edit src/ and run \`npm run sync-core\` in web/.\n` +
