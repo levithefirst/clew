@@ -125,3 +125,10 @@ test("change keys from the real stored memories (original format included)", () 
   // Sui, original wording: no calldata words; gas price and budget are not counted as changes of the call.
   assert.deepEqual(changeKeys(stored("success_tx=ByGXz3iXES3N")).map((k) => k.id), ["gasPrice", "gasLimit"]);
 });
+
+test("ties list calldata words in numeric order (word 4 before word 15)", () => {
+  const texts = [memory(1, { words: { 4: 1, 5: 2, 3: 3 } }).text, memory(2, { words: { 4: 1, 5: 2, 3: 3 } }).text];
+  assert.deepEqual(rankChanges(texts).ranked.map((r) => r.label), ["calldata word 3", "calldata word 4", "calldata word 5"]);
+  const wide = (i: number) => memory(i, { words: { 1: 1, 4: 2 } }).text.replace(/arg 4 /, "arg 15 ").replace(/arg 1 /, "arg 4 ");
+  assert.deepEqual(rankChanges([wide(1), wide(2)]).ranked.map((r) => r.label), ["calldata word 4", "calldata word 15"]);
+});

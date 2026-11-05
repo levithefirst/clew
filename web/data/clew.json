@@ -12,7 +12,7 @@
       "failure_tx": "0x5004b20f2851805165a8f7b8ffab993185820680e3a5278f26acc0c9a0a22ade",
       "chain": "ethereum"
     },
-    "memories": 14,
+    "memories": 16,
     "chains": 4,
     "chain_names": [
       "base",
@@ -21,15 +21,15 @@
       "sui"
     ],
     "per_chain": {
-      "base": 8,
+      "base": 10,
       "ethereum": 2,
       "polygon": 2,
       "sui": 2
     },
-    "distinct_contracts": 14,
+    "distinct_contracts": 15,
     "recalls": 10,
-    "human_like": 1,
-    "bot_like": 12,
+    "human_like": 2,
+    "bot_like": 13,
     "namespace": "clew",
     "relayer": "https://relayer.memory.walrus.xyz"
   },
@@ -876,6 +876,125 @@
       },
       "next_action": "reason: Too little received (used 192148 of 246588 gas, not out of gas); re-encode calldata: arg word 4 = 0x40345a5d65e9884189 (was 0x4034297ede533478d4); arg word 15 = 0x6ae0758300…000000 (was 0x6ae0757700…000000); arg word 16 = 0x5a772e0000…5a5d65 (was 0x5a772e0000…297ede); +1 more words differ; rebuild params like tx 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03; template tx 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03",
       "text": "CLEW chain=base contract=0x8ea5ad2a58c1dae75394b1e8636e6518eb6dac50 wallet=0x336a079d7b894f6b6356674b3ad668bffdd5811d error=revert:too_little_received selector=0x708909ad failed_tx=0x15f0e33c6bcaae91577346de3efac3680848b1158407ee77dbc6d743361ac153 success_tx=0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03 success_block=53152834 rev=2. Contract 0x8ea5ad2a58c1dae75394b1e8636e6518eb6dac50 on base failed with error revert:too_little_received (Too little received) for wallet 0x336a079d7b894f6b6356674b3ad668bffdd5811d. Successful retry in tx 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03 at block 53152834, 6 blocks later. Change: gas used was 176390 vs 192148 on failure; gas limit 276625 vs 246588; gas price 9532143 vs 5916993 wei; nonce 58508 -> 58509; same function 0x708909ad; calldata 612 -> 612 bytes; 4 arg word(s) changed (arg 4 0x4034297ede533478d4 -> 0x40345a5d65e9884189, arg 15 0x6ae0757700…000000 -> 0x6ae0758300…000000, arg 16 0x5a772e0000…297ede -> 0x5a772e0000…5a5d65). NEXT_ACTION: reason: Too little received (used 192148 of 246588 gas, not out of gas); re-encode calldata: arg word 4 = 0x40345a5d65e9884189 (was 0x4034297ede533478d4); arg word 15 = 0x6ae0758300…000000 (was 0x6ae0757700…000000); arg word 16 = 0x5a772e0000…5a5d65 (was 0x5a772e0000…297ede); +1 more words differ; rebuild params like tx 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03; template tx 0x389a50464dd391c3d851a5b4977e00cac3367cc1a55605e8d6d413bf1a150d03"
+    },
+    {
+      "key": "base:0x05b27e704245baa2b30307e1b283e0a596b5db1f2454dfb0cc96d25806fc07a8:0xc60fbbc029fd5e34a1a8e56d365813c1fb5b98271ff33c52ad379923e53e1eda",
+      "rev": 1,
+      "supersedes": null,
+      "chain": "base",
+      "contract": "0x23e4dafbece32b3955f1b94497d843eaef9ccdbe",
+      "wallet": "0xf22f566751f933545deb42c1637adeb7fa11ee24",
+      "error": "custom:0x8d5acdf0",
+      "error_detail": "custom error 0x8d5acdf0",
+      "selector": "0x95b4f9e6",
+      "failed_tx": "0x05b27e704245baa2b30307e1b283e0a596b5db1f2454dfb0cc96d25806fc07a8",
+      "success_tx": "0xc60fbbc029fd5e34a1a8e56d365813c1fb5b98271ff33c52ad379923e53e1eda",
+      "success_block": 53152964,
+      "blocks_later": 137,
+      "next_failure": null,
+      "wallet_class": {
+        "label": "human-like",
+        "reasons": [
+          "no automation signal: 982 prior transactions, retried ~5 min after failing, 2 calls to this contract in ~5 min"
+        ]
+      },
+      "job_id": "163e20ed-6b7f-4b5d-9c88-163eeb08367a",
+      "blob_id": "zhCnEeCcTR8eLBy7PQjFup9loS1m9WmP5pv0i983HrA",
+      "namespace": "clew",
+      "written_at": "2026-11-05T10:28:55.672Z",
+      "diff": {
+        "gasUsed": {
+          "failed": 85367,
+          "success": 218352
+        },
+        "gasLimit": {
+          "failed": 2600000,
+          "success": 2600000
+        },
+        "nonce": {
+          "failed": 982,
+          "success": 983
+        },
+        "selector": {
+          "failed": "0x95b4f9e6",
+          "success": "0x95b4f9e6"
+        },
+        "argsChanged": 1,
+        "args": [
+          {
+            "index": 1,
+            "from": "0x232e",
+            "to": "0x2334"
+          }
+        ]
+      },
+      "next_action": "reason: custom error 0x8d5acdf0 (used 85367 of 2600000 gas, not out of gas); re-encode calldata: arg word 1 = 0x2334 (was 0x232e); template tx 0xc60fbbc029fd5e34a1a8e56d365813c1fb5b98271ff33c52ad379923e53e1eda",
+      "text": "CLEW chain=base contract=0x23e4dafbece32b3955f1b94497d843eaef9ccdbe wallet=0xf22f566751f933545deb42c1637adeb7fa11ee24 error=custom:0x8d5acdf0 selector=0x95b4f9e6 failed_tx=0x05b27e704245baa2b30307e1b283e0a596b5db1f2454dfb0cc96d25806fc07a8 success_tx=0xc60fbbc029fd5e34a1a8e56d365813c1fb5b98271ff33c52ad379923e53e1eda success_block=53152964. Contract 0x23e4dafbece32b3955f1b94497d843eaef9ccdbe on base failed with error custom:0x8d5acdf0 (custom error 0x8d5acdf0) for wallet 0xf22f566751f933545deb42c1637adeb7fa11ee24. Successful retry in tx 0xc60fbbc029fd5e34a1a8e56d365813c1fb5b98271ff33c52ad379923e53e1eda at block 53152964, 137 blocks later. Change: gas used was 218352 vs 85367 on failure; gas limit 2600000 vs 2600000; gas price 10000000 vs 10000000 wei; nonce 982 -> 983; same function 0x95b4f9e6; calldata 68 -> 68 bytes; 1 arg word(s) changed (arg 1 0x232e -> 0x2334). NEXT_ACTION: reason: custom error 0x8d5acdf0 (used 85367 of 2600000 gas, not out of gas); re-encode calldata: arg word 1 = 0x2334 (was 0x232e); template tx 0xc60fbbc029fd5e34a1a8e56d365813c1fb5b98271ff33c52ad379923e53e1eda"
+    },
+    {
+      "key": "base:0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6:0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757",
+      "rev": 1,
+      "supersedes": null,
+      "chain": "base",
+      "contract": "0x8ea5ad2a58c1dae75394b1e8636e6518eb6dac50",
+      "wallet": "0x336a079d7b894f6b6356674b3ad668bffdd5811d",
+      "error": "revert:too_little_received",
+      "error_detail": "Too little received",
+      "selector": "0x708909ad",
+      "failed_tx": "0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6",
+      "success_tx": "0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757",
+      "success_block": 53152848,
+      "blocks_later": 1,
+      "next_failure": null,
+      "wallet_class": {
+        "label": "bot-like",
+        "reasons": [
+          "58,515 prior transactions",
+          "retried ~2s after failing"
+        ]
+      },
+      "job_id": "f40c7b4a-388a-499e-8715-0670de7cb6b2",
+      "blob_id": "3qXbwj7K5uJ26wIj4Nao5vreVPGwsH1kko-Z8jiWap0",
+      "namespace": "clew",
+      "written_at": "2026-11-05T10:29:56.096Z",
+      "diff": {
+        "gasUsed": {
+          "failed": 192148,
+          "success": 201052
+        },
+        "gasLimit": {
+          "failed": 246585,
+          "success": 246567
+        },
+        "nonce": {
+          "failed": 58515,
+          "success": 58517
+        },
+        "selector": {
+          "failed": "0x708909ad",
+          "success": "0x708909ad"
+        },
+        "argsChanged": 4,
+        "args": [
+          {
+            "index": 4,
+            "from": "0x403f9175ccc84c1a1c",
+            "to": "0x40330fabe72f153e76"
+          },
+          {
+            "index": 15,
+            "from": "0x6ae0759d00…000000",
+            "to": "0x6ae0759f00…000000"
+          },
+          {
+            "index": 16,
+            "from": "0x5a772e0000…9175cc",
+            "to": "0x5a772e0000…0fabe7"
+          }
+        ]
+      },
+      "next_action": "reason: Too little received (used 192148 of 246585 gas, not out of gas); re-encode calldata: arg word 4 = 0x40330fabe72f153e76 (was 0x403f9175ccc84c1a1c); arg word 15 = 0x6ae0759f00…000000 (was 0x6ae0759d00…000000); arg word 16 = 0x5a772e0000…0fabe7 (was 0x5a772e0000…9175cc); +1 more words differ; rebuild params like tx 0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757; template tx 0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757",
+      "text": "CLEW chain=base contract=0x8ea5ad2a58c1dae75394b1e8636e6518eb6dac50 wallet=0x336a079d7b894f6b6356674b3ad668bffdd5811d error=revert:too_little_received selector=0x708909ad failed_tx=0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6 success_tx=0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757 success_block=53152848. Contract 0x8ea5ad2a58c1dae75394b1e8636e6518eb6dac50 on base failed with error revert:too_little_received (Too little received) for wallet 0x336a079d7b894f6b6356674b3ad668bffdd5811d. Successful retry in tx 0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757 at block 53152848, 1 blocks later. Change: gas used was 201052 vs 192148 on failure; gas limit 246567 vs 246585; gas price 6589742 vs 21373757 wei; nonce 58515 -> 58517; same function 0x708909ad; calldata 612 -> 612 bytes; 4 arg word(s) changed (arg 4 0x403f9175ccc84c1a1c -> 0x40330fabe72f153e76, arg 15 0x6ae0759d00…000000 -> 0x6ae0759f00…000000, arg 16 0x5a772e0000…9175cc -> 0x5a772e0000…0fabe7). NEXT_ACTION: reason: Too little received (used 192148 of 246585 gas, not out of gas); re-encode calldata: arg word 4 = 0x40330fabe72f153e76 (was 0x403f9175ccc84c1a1c); arg word 15 = 0x6ae0759f00…000000 (was 0x6ae0759d00…000000); arg word 16 = 0x5a772e0000…0fabe7 (was 0x5a772e0000…9175cc); +1 more words differ; rebuild params like tx 0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757; template tx 0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757"
     }
   ],
   "recalls": [

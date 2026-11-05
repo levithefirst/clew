@@ -308,7 +308,7 @@ export function rankChanges(texts: string[]): Evidence & { template: number; cal
   }));
   const withCalldata = perRetry.filter((ks) => ks.some((k) => CALLDATA.includes(k.kind))).length;
   const calldataMajority = withCalldata * 2 > total;
-  const all = [...seen.values()].sort((a, b) => b.count - a.count || PRIORITY[a.kind] - PRIORITY[b.kind] || a.label.localeCompare(b.label));
+  const all = [...seen.values()].sort((a, b) => b.count - a.count || PRIORITY[a.kind] - PRIORITY[b.kind] || a.label.localeCompare(b.label, "en", { numeric: true }));
   const isGas = (k: ChangeKey) => !CALLDATA.includes(k.kind);
   const ranked = all.filter((k) => !calldataMajority || !isGas(k));
   const alsoDiffered = calldataMajority ? all.filter(isGas) : [];
