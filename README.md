@@ -53,6 +53,36 @@ The example buttons are real repeat failures from the Mainnet runs, with the **f
 - **The vendored core:** Vercel builds `web/` with its own install, so the API can't import `../src`. `web/lib/core/` is a generated copy (`npm run sync-core` in `web/`), and `tests/core-sync.test.ts` fails if it drifts.
 - **What a first-time visitor will see:** Clew's memory is scoped to the exact wallet and contract, so a wallet's first-ever failure gets the plain explanation and "no memory". It changes the answer on a repeat failure.
 
+## Agent endpoint: `POST /v1/recall`
+
+One call in, one JSON object out (no prose). It runs the same recall and ranking as the Try it box and adds an action, a concrete retry and a confidence for the path.
+
+```
+POST https://clew-eight.vercel.app/v1/recall     (GET with ?chain=&failedTxHash= works too, read-only)
+{ "chain": "base" | "ethereum" | "polygon" | "sui", "failedTxHash": "0x…", "agentId": "optional" }
+->
+{ "action": "retry" | "abort" | "abstain",
+  "recommended": { "calldata": "0x…" | null, "gasLimit": 246585 | null, "gasPrice": "21373757" | null, "nonceStrategy": "next" | null },
+  "confidence": 0.5,
+  "evidence": { "successes": 2, "laterFailures": 1, "mostConsistentChange": "calldata word 4", "blobIds": ["…"] },
+  "demotionFlag": true,
+  "priorRetries": 2 }
+```
+
+Errors are `{ "error": { "code", "message" } }` with 400 `bad_input`, 404 `not_found`, 422 `not_a_failure`, 429 `rate_limited`, 501 `sui_disabled`, 502 `upstream`, 503 `unconfigured`. Read-only: nothing is written to Walrus. Limits: 12 calls a minute per `agentId` (else per client address, best-effort per server instance), answers cached 60 seconds.
+
+- **action:** `abstain` when nothing is remembered for this wallet + contract + error. `retry` while successes outnumber later failures. `abort` once later failures catch up (the remembered path has failed as often as it worked); `recommended` is then all null.
+- **recommended:** `calldata` is the failed call's calldata with the retry's change applied (full words, read from the two transactions, not the clipped memory text); null on Sui. `gasLimit` and `gasPrice` are the failed attempt's own unless the failure ran out of gas (the gas gate above). `gasPrice` is a decimal string (wei, or MIST on Sui). `nonceStrategy` is `next`: a failed transaction is mined and spent its nonce.
+- **Confidence** for a (wallet + contract + error) path: `successes / (successes + laterFailures + 1)`. `successes` are the distinct earlier retries that worked. A **later failure** is a distinct failure on the path that arrived after one of those successes: a failure already on record (it has its own retry in memory) counts when its block is later than that success; the failure you are asking about counts only when it replays a remembered change (its calldata already holds the retry's value, so the path was applied and failed). A plain next failure is the question, not evidence against the path. Everything is read from the stored memory text (failure block = success block minus "N blocks later") and the failure itself, so it works on every memory already on Walrus and stores nothing new.
+- **Demotion:** any later failure sets `demotionFlag` and lowers confidence. In the ranking, a retry outrun by later failures votes with weight `1 / (1 + its later failures)`; the counts shown stay plain counts. So a new failure after a success can change which change leads (covered in `tests/agent.test.ts`). One memory is unchanged: no ranking, same advice, confidence 0.5.
+- **Real data:** the Base wallet behind failure `0xd72b…4bb6` has two stored retries on the same contract and error, and that failure landed after the first retry's success: 2 successes, 1 later failure, confidence 0.5, `demotionFlag` true, action `retry`.
+- **Sui hook:** `chain: "sui"` takes a transaction digest and returns the same object. Live Sui reads are off until the deployment sets `CLEW_SUI_LIVE=1` (until then: 501 `sui_disabled`, no Sui call). Code: `loadFailure` in `src/agent.ts`; a caller can also pass `loadSui` or a generic `load`. Sui `recommended.calldata` is null (Sui has Pure inputs, not calldata).
+- **CLI:** `npm run recall -- base 0xd72b…` runs the same code locally (needs the three keys).
+
+### Measurement harness
+
+`npm run measure -- hashes.txt` (one `chain:hash` per line, `#` comments allowed; `--json` for rows) reads each failure through Tatum once and recalls twice, from an empty namespace (memory off) and from the real one (memory on), then prints a Markdown table with the action, confidence, successes, later failures, demotion flag, prior retries and most consistent change, plus a one-line summary. A row that cannot be read shows its error and the run continues. Code in `src/measure.ts`; the offline test is in `tests/agent.test.ts`. It makes live calls when run, so it is not part of `npm test`.
+
 ## Setup
 
 Requires Node 20+ (memwal recommends a patched 22.x/24.x for production).

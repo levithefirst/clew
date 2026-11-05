@@ -10,7 +10,7 @@ export const maxDuration = 60; // ~8 Tatum calls at the free plan's 360 ms spaci
 
 const perMinute = limiter(6, 60_000);
 
-const STATUS = { bad_input: 400, not_found: 404, not_a_failure: 422, upstream: 502 } as const;
+const STATUS = { bad_input: 400, not_found: 404, not_a_failure: 422, upstream: 502, sui_disabled: 501 } as const;
 const json = (body: unknown, status = 200, headers?: HeadersInit) => Response.json(body, { status, headers: { "cache-control": "no-store", ...headers } });
 
 async function lookup(req: Request, input: unknown, chainRaw: unknown): Promise<Response> {

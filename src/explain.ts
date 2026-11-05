@@ -4,7 +4,7 @@
 //   Walrus: two recalls, one from an empty namespace (what Clew says with no memory) and one from the real
 //           namespace, so both answers are produced by the same run on the same failure.
 import { getReceipt } from "./tatum.ts";
-import { loadAttempt, recallFor, type Attempt, type NextAction } from "./clew.ts";
+import { loadAttempt, recallFor, type Attempt, type Evidence, type NextAction } from "./clew.ts";
 import { loadSuiAttempt, type SuiAttempt } from "./sui.ts";
 import { walrus, type MemoryStore } from "./memory.ts";
 import { explainError, summarizeChange, type Change, type Reason } from "./reasons.ts";
@@ -15,7 +15,7 @@ export const EVM_CHAINS = ["base", "ethereum", "polygon"] as const;
 /** Recalling from here finds nothing, which is exactly the "no memory" answer. */
 export const EMPTY_NAMESPACE = "clew-counterfactual-empty";
 
-export type ClewErrorCode = "bad_input" | "not_found" | "not_a_failure" | "upstream";
+export type ClewErrorCode = "bad_input" | "not_found" | "not_a_failure" | "upstream" | "sui_disabled";
 
 /** An error whose message is safe to show a visitor. */
 export class ClewError extends Error {
@@ -58,12 +58,18 @@ export interface Answer {
   /** What Clew says with an empty namespace. */
   without: string;
   /** What Clew says with the real namespace; null when this wallet and contract have no memory. */
-  memory: null | { successTx: string; successBlock: number; blobId: string; changed: Change; nextAction: NextAction; suggestion: string };
+  memory: null | {
+    successTx: string; successBlock: number; blobId: string; changed: Change; nextAction: NextAction; suggestion: string;
+    /** Distinct earlier retries that succeeded after this wallet's same error on this contract (1 = a single memory). */
+    priorRetries: number;
+    /** Present only when priorRetries is 2 or more: the changes counted across them, most consistent first. */
+    ranking?: Evidence;
+  };
 }
 
 export interface CheckOptions { chain?: string; store?: MemoryStore }
 
-const blockOf = (f: Attempt | SuiAttempt) => ("block" in f ? f.block : f.checkpoint);
+const blockOf = (f: Attempt | SuiAttempt) => ("checkpoint" in f ? f.checkpoint : f.block);
 
 async function loadFailure(target: Target, chain?: string): Promise<{ chain: string; f: Attempt | SuiAttempt }> {
   try {
@@ -91,7 +97,7 @@ export async function checkFailure(input: string, opts: CheckOptions = {}): Prom
     reason: explainError(f.errorSig, f.errorDetail),
     without: without.matched ? "(unexpected: the empty namespace returned a memory)" : without.message,
     memory: withMem.matched
-      ? { successTx: withMem.priorPath.successTx ?? "", successBlock: withMem.priorPath.successBlock, blobId: withMem.memoryBlobId, changed: summarizeChange(withMem.priorPath.change), nextAction: withMem.nextAction, suggestion: withMem.suggestion }
+      ? { successTx: withMem.priorPath.successTx ?? "", successBlock: withMem.priorPath.successBlock, blobId: withMem.memoryBlobId, changed: summarizeChange(withMem.priorPath.change), nextAction: withMem.nextAction, suggestion: withMem.suggestion, priorRetries: withMem.priorRetries, ...(withMem.nextAction.evidence && { ranking: withMem.nextAction.evidence }) }
       : null,
   };
 }

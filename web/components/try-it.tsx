@@ -7,12 +7,15 @@ import { DATA, CHAIN_LABEL, txUrl, addrUrl, blobUrl, explorerName, nextActionOf,
 import { explainError, summarizeChange } from "@/lib/core/reasons";
 import type { Answer } from "@/lib/core/explain";
 import type { NextAction as Action } from "@/lib/advice";
+import type { RecallResponse } from "@/lib/core/agent";
 import { short } from "@/lib/utils";
 
 /** An Answer as the page renders it: the live one from the server, or a recorded one built from the site data. */
 type Memory = NonNullable<Answer["memory"]>;
 type ViewAnswer = Omit<Answer, "memory"> & { memory: null | (Omit<Memory, "nextAction" | "suggestion"> & { nextAction: Action }) };
-type Done = { answer: ViewAnswer; recorded: boolean };
+/** The structured /v1/recall answer for the same failure; "unavailable" when that call failed (the comparison still shows). */
+type Agent = RecallResponse | "unavailable";
+type Done = { answer: ViewAnswer; recorded: boolean; agent?: Agent };
 type State = { phase: "idle" } | { phase: "loading" } | { phase: "done"; done: Done } | { phase: "error"; message: string };
 
 interface Example { chain: Chain; hash: string; label: string; featured: boolean }
@@ -49,7 +52,7 @@ function recordedFor(hash: string): Done | null {
       failure: { wallet: m.wallet, contract: m.contract, errorSig: m.error, errorDetail: m.error_detail ?? "", block: 0, gasUsed: 0, gasLimit: 0 },
       reason: explainError(m.error, m.error_detail ?? undefined),
       without: r.without_memory ?? `Tx ${short(r.failure_tx, 10, 6)} on ${r.chain} reverted (${m.error}). No prior successful path on record for this wallet+contract. Check params and retry.`,
-      memory: { successTx: r.with_memory.prior_success, successBlock: r.with_memory.block, blobId: r.with_memory.blob_id, changed: summarizeChange(r.with_memory.change), nextAction: action },
+      memory: { successTx: r.with_memory.prior_success, successBlock: r.with_memory.block, blobId: r.with_memory.blob_id, changed: summarizeChange(r.with_memory.change), nextAction: action, priorRetries: 1 },
     },
   };
 }
@@ -60,6 +63,20 @@ async function check(hash: string): Promise<{ ok: boolean; answer?: Answer; code
   try {
     const res = await fetch("/api/check", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ input: hash }), signal: ctl.signal });
     return await res.json().catch(() => ({ ok: false, message: "Unexpected response." }));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function recallAgent(chain: string, hash: string): Promise<Agent> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 75_000);
+  try {
+    const res = await fetch("/v1/recall", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chain, failedTxHash: hash, agentId: "clew-try-page" }), signal: ctl.signal });
+    const json = await res.json().catch(() => null);
+    return res.ok && json && typeof json.action === "string" ? (json as RecallResponse) : "unavailable";
+  } catch {
+    return "unavailable";
   } finally {
     clearTimeout(timer);
   }
@@ -80,7 +97,15 @@ export function TryIt({ heading = "h2" }: { heading?: "h1" | "h2" }) {
     try {
       const json = await check(hash);
       if (id !== run.current) return;
-      if (json.ok && json.answer) return setState({ phase: "done", done: { answer: json.answer, recorded: false } });
+      if (json.ok && json.answer) {
+        const answer = json.answer;
+        setState({ phase: "done", done: { answer, recorded: false } });
+        // The agent view of the same failure: filled in when /v1/recall answers; the comparison above does not wait for it.
+        void recallAgent(answer.chain, answer.hash).then((agent) => {
+          if (id === run.current) setState({ phase: "done", done: { answer, recorded: false, agent } });
+        });
+        return;
+      }
       message = json.message ?? message;
       // The live path is switched off or down: an example still has a recorded run, labelled as one.
       if (json.code === "unconfigured" || json.code === "upstream") {
@@ -206,13 +231,14 @@ function Compare({ done }: { done: Done }) {
                 {m.successBlock > 0 && <span className="num text-label text-ink-4">{blockWord(chain)} {m.successBlock.toLocaleString("en-US")}</span>}
               </p>
               <p className="mt-3 text-small text-ink-2 text-pretty">
-                <span className="font-[580] text-ink">What changed:</span>{" "}
+                <span className="font-[580] text-ink">{m.ranking ? "What changed in the retry shown:" : "What changed:"}</span>{" "}
                 {m.changed.changed.length ? m.changed.changed.join(", ") : "nothing in the call itself"}.
                 {m.changed.alsoDiffered.length > 0 && (
                   <span className="text-ink-4"> Also differed, and not shown as a cause: {m.changed.alsoDiffered.join(", ")}.</span>
                 )}
               </p>
-              <NextAction action={m.nextAction} className="mt-4" />
+              {m.ranking && <p className="mt-3 text-label text-ink-4">Ranked from {m.priorRetries} earlier retries that succeeded after this same error.</p>}
+              <NextAction action={m.nextAction} className="mt-3" />
               <p className="mt-4 flex flex-wrap items-center gap-x-2 text-label text-ink-4">
                 Walrus blob id
                 <Hash value={m.blobId} href={blobUrl(m.blobId)} label="Walrus blob" linkLabel="Walruscan" head={10} tail={6} />
@@ -228,11 +254,50 @@ function Compare({ done }: { done: Done }) {
         </div>
       </div>
 
+      {!recorded && <AgentView agent={done.agent} chain={a.chain} hash={a.hash} />}
+
       <p className="text-label text-ink-4">
         {recorded
           ? "Recorded run from the Mainnet demo (live lookup unavailable right now)."
           : "Live run: the receipt was read through Tatum and both columns came from Walrus Memory just now."}
       </p>
+    </div>
+  );
+}
+
+const fields = (r: RecallResponse): [string, string][] => [
+  ["action", r.action],
+  ["confidence", String(r.confidence)],
+  ["demotionFlag", String(r.demotionFlag)],
+  ["priorRetries", String(r.priorRetries)],
+  ["evidence.successes", String(r.evidence.successes)],
+  ["evidence.laterFailures", String(r.evidence.laterFailures)],
+  ["evidence.mostConsistentChange", r.evidence.mostConsistentChange],
+  ["evidence.blobIds", r.evidence.blobIds.length ? r.evidence.blobIds.map((b) => short(b, 10, 6)).join(", ") : "none"],
+  ["recommended.calldata", r.recommended.calldata ? `${r.recommended.calldata.slice(0, 18)}…${r.recommended.calldata.slice(-8)} (${(r.recommended.calldata.length - 2) / 2} bytes)` : "null"],
+  ["recommended.gasLimit", String(r.recommended.gasLimit)],
+  ["recommended.gasPrice", String(r.recommended.gasPrice)],
+  ["recommended.nonceStrategy", String(r.recommended.nonceStrategy)],
+];
+
+/** The structured fields of POST /v1/recall for this failure, as returned. Display only. */
+function AgentView({ agent, chain, hash }: { agent?: Agent; chain: string; hash: string }) {
+  return (
+    <div className="card min-w-0 px-5 py-6 sm:px-7">
+      <p className="text-body-sm font-[580] text-ink">Agent response</p>
+      <p className="mt-1 break-words font-mono text-label text-ink-4">POST /v1/recall {`{ "chain": "${chain}", "failedTxHash": "${short(hash, 10, 6)}" }`}</p>
+      {!agent && <p className="mt-4 text-small text-ink-3">Asking /v1/recall…</p>}
+      {agent === "unavailable" && <p className="mt-4 text-small text-ink-3">/v1/recall did not answer right now. The comparison above is unaffected.</p>}
+      {agent && agent !== "unavailable" && (
+        <dl className="mt-4 grid min-w-0 gap-x-6 gap-y-2 text-small sm:grid-cols-[max-content_1fr]">
+          {fields(agent).map(([k, v]) => (
+            <div key={k} className="contents">
+              <dt className="font-mono text-label text-ink-4">{k}</dt>
+              <dd className="min-w-0 break-words font-mono text-[0.8125rem] text-ink-2 [overflow-wrap:anywhere]">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
     </div>
   );
 }

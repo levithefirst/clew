@@ -297,18 +297,24 @@ export function changeKeys(text: string): ChangeKey[] {
  * Count how often each change appears across the earlier successful retries (newest first) and rank them.
  * `template` is the newest retry that contains the top change, so the tx and word values shown are one that did it.
  */
-export function rankChanges(texts: string[]): Evidence & { template: number; calldataMajority: boolean } {
+export function rankChanges(texts: string[], weights: number[] = []): Evidence & { template: number; calldataMajority: boolean } {
   const total = texts.length;
-  const seen = new Map<string, ChangeKey & { count: number; newest: number }>();
+  // A retry that a later failure outran (see pathStats) votes with weight 1 / (1 + its later failures); with no
+  // weights every retry votes 1, which is the original count. The shown count is always the plain number of retries.
+  const weight = (i: number) => weights[i] ?? 1;
+  const seen = new Map<string, ChangeKey & { count: number; score: number; newest: number; bestWeight: number }>();
   const perRetry = texts.map(changeKeys);
   perRetry.forEach((keys, i) => keys.forEach((k) => {
-    const e = seen.get(k.id) ?? { ...k, count: 0, newest: i };
+    const e = seen.get(k.id) ?? { ...k, count: 0, score: 0, newest: i, bestWeight: 0 };
     e.count++;
+    e.score += weight(i);
+    // The template is the newest retry among the least-outrun ones that made this change.
+    if (weight(i) > e.bestWeight) { e.bestWeight = weight(i); e.newest = i; }
     seen.set(k.id, e);
   }));
   const withCalldata = perRetry.filter((ks) => ks.some((k) => CALLDATA.includes(k.kind))).length;
   const calldataMajority = withCalldata * 2 > total;
-  const all = [...seen.values()].sort((a, b) => b.count - a.count || PRIORITY[a.kind] - PRIORITY[b.kind] || a.label.localeCompare(b.label));
+  const all = [...seen.values()].sort((a, b) => b.score - a.score || b.count - a.count || PRIORITY[a.kind] - PRIORITY[b.kind] || a.label.localeCompare(b.label, "en", { numeric: true }));
   const isGas = (k: ChangeKey) => !CALLDATA.includes(k.kind);
   const ranked = all.filter((k) => !calldataMajority || !isGas(k));
   const alsoDiffered = calldataMajority ? all.filter(isGas) : [];
@@ -328,6 +334,8 @@ export function evidenceLines(e: Evidence): string[] {
     const [top, ...rest] = e.ranked;
     out.push(`- Most consistent change: ${top.label}, in ${of(top, e.total)} earlier retries that succeeded after this same error.`);
     for (const r of rest) if (r.count >= 2) out.push(`- Also seen: ${r.label}, in ${of(r, e.total)}.`);
+  } else if (e.ranked.some((r) => r.count >= 2)) {
+    out.push(`- ${e.total} earlier retries succeeded after this same error. The change that repeated across them was followed by a later failure, so the best-supported retry is shown instead.`);
   } else {
     out.push(`- ${e.total} earlier retries succeeded after this same error and no single change repeated across them. Showing the most recent.`);
   }
@@ -335,8 +343,86 @@ export function evidenceLines(e: Evidence): string[] {
   return out;
 }
 
+// ---------- confidence and demotion, per (wallet + contract + error) path ----------
+export interface PathStats {
+  /** Distinct earlier retries that succeeded after this wallet's same error on this contract. */
+  successes: number;
+  /** Distinct failures on this path that arrived after one of those successes (see pathStats). */
+  laterFailures: number;
+  /** successes / (successes + laterFailures + 1). 0 with no memory, 0.5 for one success and no later failure. */
+  confidence: number;
+  /** True once any later failure has lowered the confidence. */
+  demotionFlag: boolean;
+  /** Per retry, newest first (same order as the matches): how many later failures outran it. */
+  outrun: number[];
+}
+
+/** Same clip as the Sui memory text (src/sui.ts), so a stored `to` value can be compared with a live input. */
+const clipValue = (v: string) => (v.length > 24 ? `${v.slice(0, 12)}…${v.slice(-6)}` : v);
+const wordMatches = (stored: string, word: string | undefined) =>
+  word !== undefined && (stored === short(word) || stored === "0x" + (word.replace(/^0+/, "") || "0"));
+
+/**
+ * True when a failure replayed the change a stored retry made: every calldata word (or Sui input) the memory lists
+ * already holds the retry's value, or the call already uses the retry's function. A retry with only gas differences
+ * has nothing to compare, so it is never "replayed". Reads the "Change:" sentence, so it works on every format.
+ */
+export function replaysChange(text: string, f: Pick<FailureLike, "selector" | "input" | "inputs">): boolean {
+  const change = text.match(/Change: (.*?)\. NEXT_ACTION/s)?.[1] ?? "";
+  const checks: boolean[] = [];
+  const fw = f.input ? words(f.input) : [];
+  for (const m of change.matchAll(/\barg (\d+) \S+ -> ([^\s,)]+)/g)) checks.push(wordMatches(m[2], fw[Number(m[1])]));
+  for (const m of change.matchAll(/\binput (\d+) \S+ -> ([^\s,)]+)/g)) {
+    const v = f.inputs?.[Number(m[1])];
+    checks.push(v !== undefined && (m[2] === clipValue(v) || m[2] === v));
+  }
+  const fn = change.match(/\bfunction (\S+) -> (\S+?);/);
+  if (fn) checks.push(f.selector === fn[2]);
+  return checks.length > 0 && checks.every(Boolean);
+}
+
+const blocksLater = (text: string) => Number(text.match(/(\d+) blocks later/)?.[1]);
+
+/**
+ * Confidence for a path from the memories that match it (newest first, one per failed->success pair).
+ *   successes     = the matched retries.
+ *   laterFailures = distinct failures on the path that arrived after one of those successes. A failure already on
+ *                   record (it has its own retry in the matches) counts when its block is later than that success.
+ *                   The failure being asked about counts only when it replays a remembered change, i.e. the path
+ *                   was applied and failed: a plain next failure is the question, not evidence against the path.
+ * Everything is read from the stored texts (block of a failure = success block minus "N blocks later") and from the
+ * failure itself, so it works on every memory already on Walrus with nothing new stored.
+ */
+export function pathStats(matches: Recalled[], f: FailureLike): PathStats {
+  const retries = matches.map((m) => ({
+    text: m.text, failedTx: field(m.text, "failed_tx"), successBlock: Number(field(m.text, "success_block")),
+    failBlock: Number(field(m.text, "success_block")) - blocksLater(m.text),
+  }));
+  const failures = new Map<string, { block: number; onRecord: boolean }>();
+  for (const r of retries) failures.set(r.failedTx ?? "", { block: r.failBlock, onRecord: true });
+  if (!failures.has(f.hash)) failures.set(f.hash, { block: f.block ?? f.checkpoint ?? NaN, onRecord: false });
+  const counted = new Set<string>();
+  const outrun = retries.map((r) => {
+    let n = 0;
+    for (const [hash, x] of failures) {
+      if (hash === r.failedTx || !(x.block > r.successBlock)) continue;
+      if (!x.onRecord && !replaysChange(r.text, f)) continue;
+      n++; counted.add(hash);
+    }
+    return n;
+  });
+  const successes = retries.length, laterFailures = counted.size;
+  return { successes, laterFailures, confidence: successes / (successes + laterFailures + 1), demotionFlag: laterFailures > 0, outrun };
+}
+
 /** The fields recall needs from a failure, on any chain (an EVM Attempt or a Sui attempt both fit). */
-export interface FailureLike extends FailureFacts { chain: string; hash: string; contract: string; wallet: string; selector: string }
+export interface FailureLike extends FailureFacts {
+  chain: string; hash: string; contract: string; wallet: string; selector: string;
+  /** Where the failure sits in the chain (EVM block; Sui checkpoint). Used to order it against earlier successes. */
+  block?: number; checkpoint?: number;
+  /** What the failed call carried: EVM calldata hex, or Sui inputs (Pure as hex BCS). Lets a replayed change be spotted. */
+  input?: string; inputs?: string[];
+}
 
 /** One entry per failed->success pair: a corrected rewrite (higher rev) replaces the memory it supersedes. */
 function distinctPairs(hits: Recalled[]): Recalled[] {
@@ -364,7 +450,8 @@ export async function recallFor<F extends FailureLike>(f: F, opts: { store?: Mem
     return { matched: false as const, failure: f,
       message: `Tx ${f.hash} on ${f.chain} reverted (${f.errorSig}). No prior successful path on record for this wallet+contract. Check params and retry.` };
   }
-  const ranking = matches.length > 1 ? rankChanges(matches.map((m) => m.text)) : undefined;
+  const path = pathStats(matches, f);
+  const ranking = matches.length > 1 ? rankChanges(matches.map((m) => m.text), path.outrun.map((n) => 1 / (1 + n))) : undefined;
   const match = matches[ranking?.template ?? 0];
   const stored = match.text.match(/NEXT_ACTION: (.*)$/)?.[1] ?? "";
   let nextAction = gateGasHints(parseNextAction(stored), rememberedFailure(match.text), f);
@@ -374,7 +461,8 @@ export async function recallFor<F extends FailureLike>(f: F, opts: { store?: Mem
     nextAction = { ...nextAction, evidence, ...(calldataMajority ? { gasLimit: undefined } : {}) };
   }
   return {
-    matched: true as const, failure: f, memoryBlobId: match.blob_id, distance: match.distance,
+    matched: true as const, failure: f, memoryBlobId: match.blob_id, distance: match.distance, priorRetries: matches.length,
+    path: { ...path, blobIds: [match.blob_id, ...matches.filter((m) => m !== match).map((m) => m.blob_id)] },
     priorPath: { failedTx: field(match.text, "failed_tx"), successTx: field(match.text, "success_tx"), successBlock: Number(field(match.text, "success_block")),
       change: match.text.match(/Change: (.*?)\. NEXT_ACTION/)?.[1] },
     nextAction, suggestion: formatNextAction(nextAction), storedNextAction: stored,

@@ -25,6 +25,8 @@ const txs: Record<string, Tx> = {
   [H(5)]: { chain: "base", from: W2, status: "0x1", arg: 1, nonce: 2, block: 202 },     // other wallet success
   [H(6)]: { chain: "base", from: W, status: "0x1", arg: 940, nonce: 10, block: 50_000 },// "retry" far too late
   [H(7)]: { chain: "polygon", from: W, status: "0x0", arg: 1, nonce: 1, block: 10 },    // only on polygon
+  [H(10)]: { chain: "base", from: W, status: "0x0", arg: 980, nonce: 11, block: 150 },  // an earlier failure of the same wallet...
+  [H(11)]: { chain: "base", from: W, status: "0x1", arg: 940, nonce: 12, block: 153 },  // ...fixed the same way (word 1 again)
 };
 const calls: string[] = [];
 setRpc(async (chain, method, p: any[]) => {
@@ -99,6 +101,29 @@ test("answer: no memory -> generic message and no memory; once a pair is remembe
   assert.equal(after.without, before.without); // the empty-namespace answer is unchanged by the memory
   // another wallet on the same contract still gets nothing: the path is never borrowed
   assert.equal((await checkFailure(H(4), { store })).memory, null);
+});
+
+test("live answer: one earlier success is unchanged; two carry the ranking (and it survives the route's JSON)", async () => {
+  const { store } = memoryStore();
+  await recordRetry("base", H(1), H(2), store);
+  const one = await checkFailure(H(3), { store });
+  assert.equal(one.memory?.priorRetries, 1);
+  assert.equal("ranking" in one.memory!, false);
+  assert.equal("evidence" in one.memory!.nextAction, false);
+  assert.doesNotMatch(one.memory!.suggestion, /Most consistent|earlier retries/);
+
+  await recordRetry("base", H(10), H(11), store); // a second retry by the same wallet, same word changed
+  const two = await checkFailure(H(3), { store });
+  assert.equal(two.memory?.priorRetries, 2);
+  assert.deepEqual(two.memory?.ranking, { total: 2, repeated: true, ranked: [{ label: "calldata word 1", count: 2 }], alsoDiffered: [] });
+  assert.match(two.memory!.suggestion, /^Prior successful retry \(template\): \S+\n- Most consistent change: calldata word 1, in 2 of 2 earlier retries that succeeded after this same error\./);
+  assert.notEqual(two.memory!.suggestion, one.memory!.suggestion);
+  assert.equal(two.without, one.without); // the memory-off column does not change
+
+  const wire = JSON.parse(JSON.stringify(two)); // what /api/check sends
+  assert.equal(wire.memory.priorRetries, 2);
+  assert.equal(wire.memory.ranking.ranked[0].count, 2);
+  assert.equal(wire.memory.nextAction.evidence.total, 2);
 });
 
 test("answer: errors a visitor can read", async () => {

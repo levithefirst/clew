@@ -115,5 +115,20 @@
       "58,508 prior transactions",
       "32 calls to this contract in ~5 min (6 failed)"
     ]
+  },
+  "base:0x05b27e704245baa2b30307e1b283e0a596b5db1f2454dfb0cc96d25806fc07a8:0xc60fbbc029fd5e34a1a8e56d365813c1fb5b98271ff33c52ad379923e53e1eda": {
+    "wallet": "0xf22f566751f933545deb42c1637adeb7fa11ee24",
+    "label": "human-like",
+    "reasons": [
+      "no automation signal: 982 prior transactions, retried ~5 min after failing, 2 calls to this contract in ~5 min"
+    ]
+  },
+  "base:0xd72b632220fb7e79d8fb671a0109b791a12c6ccc3f9604b52507f6a994864bb6:0x29751e28caca024f75206b8512122148d203afe710f6fa351af4f73e89a8d757": {
+    "wallet": "0x336a079d7b894f6b6356674b3ad668bffdd5811d",
+    "label": "bot-like",
+    "reasons": [
+      "58,515 prior transactions",
+      "retried ~2s after failing"
+    ]
   }
 }
