@@ -6,6 +6,8 @@ Clew handles one loop: **failure → successful retry → next failure**.
 
 **Live demo:** [useclew.vercel.app](https://useclew.vercel.app) — paste a failed hash into Try it (also at [`/try`](https://useclew.vercel.app/try)). Base, Ethereum, Polygon, and Sui.
 
+**Write-up:** [Clew: remembering the retry that worked](https://dev.to/levithefirst/clew-remembering-the-retry-that-worked-9gj) · **Demo video:** [on X](https://x.com/levithefirst/status/2119714520012595385)
+
 ## Tatum and Walrus
 
 **Tatum** is how Clew reads the chain. On Base, Ethereum and Polygon it uses the JSON-RPC gateways: `eth_getTransactionReceipt` (status `0x0` is a failure, `0x1` a success), `eth_getTransactionByHash` (calldata, gas, nonce, value), `eth_getBlockByNumber` (timestamp), `eth_getBlockReceipts` (to find the later success from the same wallet to the same contract), and `debug_traceTransaction` with `callTracer` to decode the revert (`eth_call` replay at `block-1` if the trace is missing). It decodes `Error(string)` (`0x08c379a0`), `Panic(uint256)` (`0x4e487b71`) and custom error selectors. On Sui, Tatum’s gateway is GraphQL only (`POST https://sui-mainnet.gateway.tatum.io/graphql`): one transaction query returns sender, gas, status, checkpoint, Move calls, Pure inputs, and `executionError` (module, function, abort code). The free plan’s 3 requests/second limit is respected with a 360 ms gap between calls.
@@ -68,7 +70,7 @@ npm run live-demo [-- --dry-run --address 0x…]
 
 Supported chains through Tatum: `ethereum`, `base`, `polygon`, `arbitrum`, `optimism`, `bsc` (JSON-RPC), and `sui` (GraphQL, verified on Mainnet).
 
-Command-by-command notes: [`DEMO.md`](DEMO.md).
+Command-by-command notes: [`DEMO.md`](DEMO.md). Write-up: [dev.to](https://dev.to/levithefirst/clew-remembering-the-retry-that-worked-9gj).
 
 ---
 
